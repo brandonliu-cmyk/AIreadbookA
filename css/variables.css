@@ -1,0 +1,274 @@
+/**
+ * CSS 变量定义 - 游戏化主题样式系统
+ * AI点读应用 - 面向小学生的可爱、色彩丰富的界面
+ * Requirements: 8.1, 8.4
+ */
+
+:root {
+    /* ========================================
+     * 主色调 - 明亮、丰富的色彩方案
+     * ======================================== */
+    
+    /* 主要品牌色 - 活力粉红 */
+    --color-primary: #FF6B9D;
+    --color-primary-light: #FF8FB3;
+    --color-primary-dark: #E5527F;
+    --color-primary-bg: #FFF0F5;
+    
+    /* 次要色 - 天空蓝 */
+    --color-secondary: #4ECDC4;
+    --color-secondary-light: #7EDDD6;
+    --color-secondary-dark: #3DBDB4;
+    --color-secondary-bg: #E8FAF8;
+    
+    /* 强调色 - 阳光黄 */
+    --color-accent: #FFE66D;
+    --color-accent-light: #FFED99;
+    --color-accent-dark: #E6CF5A;
+    --color-accent-bg: #FFFBEB;
+    
+    /* 成功色 - 清新绿 */
+    --color-success: #7ED957;
+    --color-success-light: #A5E88A;
+    --color-success-dark: #6BC946;
+    --color-success-bg: #F0FBE9;
+    
+    /* 警告色 - 橙色 */
+    --color-warning: #FFA94D;
+    --color-warning-light: #FFBE73;
+    --color-warning-dark: #E69540;
+    --color-warning-bg: #FFF5EB;
+    
+    /* 错误色 - 珊瑚红 */
+    --color-error: #FF6B6B;
+    --color-error-light: #FF8E8E;
+    --color-error-dark: #E65555;
+    --color-error-bg: #FFF0F0;
+    
+    /* 信息色 - 紫罗兰 */
+    --color-info: #A78BFA;
+    --color-info-light: #C4B5FD;
+    --color-info-dark: #8B5CF6;
+    --color-info-bg: #F5F3FF;
+    
+    /* ========================================
+     * 学科主题色
+     * ======================================== */
+    --color-subject-english: #4ECDC4;    /* 英语 - 青绿色 */
+    --color-subject-chinese: #FF6B9D;    /* 语文 - 粉红色 */
+    --color-subject-math: #FFE66D;       /* 数学 - 黄色 */
+    --color-subject-science: #7ED957;    /* 科学 - 绿色 */
+    --color-subject-art: #A78BFA;        /* 美术 - 紫色 */
+    --color-subject-music: #FFA94D;      /* 音乐 - 橙色 */
+    
+    /* ========================================
+     * 中性色 - 文字和背景
+     * ======================================== */
+    --color-text-primary: #2D3748;       /* 主要文字 */
+    --color-text-secondary: #718096;     /* 次要文字 */
+    --color-text-muted: #A0AEC0;         /* 弱化文字 */
+    --color-text-inverse: #FFFFFF;       /* 反色文字 */
+    
+    --color-bg-primary: #FFFFFF;         /* 主背景 */
+    --color-bg-secondary: #F7FAFC;       /* 次背景 */
+    --color-bg-tertiary: #EDF2F7;        /* 第三背景 */
+    --color-bg-overlay: rgba(0, 0, 0, 0.5); /* 遮罩层 */
+    
+    /* 边框颜色 */
+    --color-border-light: #E2E8F0;
+    --color-border-medium: #CBD5E0;
+    --color-border-dark: #A0AEC0;
+    
+    /* ========================================
+     * 渐变色 - 游戏化视觉效果
+     * ======================================== */
+    --gradient-primary: linear-gradient(135deg, #FF6B9D 0%, #FF8FB3 100%);
+    --gradient-secondary: linear-gradient(135deg, #4ECDC4 0%, #7EDDD6 100%);
+    --gradient-accent: linear-gradient(135deg, #FFE66D 0%, #FFED99 100%);
+    --gradient-rainbow: linear-gradient(135deg, #FF6B9D 0%, #FFE66D 25%, #7ED957 50%, #4ECDC4 75%, #A78BFA 100%);
+    --gradient-sunset: linear-gradient(135deg, #FF6B9D 0%, #FFA94D 100%);
+    --gradient-ocean: linear-gradient(135deg, #4ECDC4 0%, #A78BFA 100%);
+    --gradient-forest: linear-gradient(135deg, #7ED957 0%, #4ECDC4 100%);
+    
+    /* ========================================
+     * 圆角 - 柔和的视觉元素
+     * ======================================== */
+    --radius-xs: 4px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-2xl: 32px;
+    --radius-full: 9999px;
+    
+    /* ========================================
+     * 阴影 - 柔和的立体效果
+     * ======================================== */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.12);
+    --shadow-2xl: 0 20px 40px rgba(0, 0, 0, 0.15);
+    
+    /* 彩色阴影 - 增加趣味性 */
+    --shadow-primary: 0 4px 14px rgba(255, 107, 157, 0.3);
+    --shadow-secondary: 0 4px 14px rgba(78, 205, 196, 0.3);
+    --shadow-accent: 0 4px 14px rgba(255, 230, 109, 0.3);
+    --shadow-success: 0 4px 14px rgba(126, 217, 87, 0.3);
+    
+    /* ========================================
+     * 间距系统
+     * ======================================== */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+    --spacing-3xl: 64px;
+    
+    /* ========================================
+     * 字体系统
+     * ======================================== */
+    --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 
+                        'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', 
+                        Helvetica, Arial, sans-serif;
+    --font-family-display: 'Comic Sans MS', 'Chalkboard', 'Comic Neue', cursive, 
+                           var(--font-family-base);
+    --font-family-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+    
+    /* 字体大小 */
+    --font-size-xs: 12px;
+    --font-size-sm: 14px;
+    --font-size-md: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 20px;
+    --font-size-2xl: 24px;
+    --font-size-3xl: 30px;
+    --font-size-4xl: 36px;
+    --font-size-5xl: 48px;
+    
+    /* 字体粗细 */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    
+    /* 行高 */
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.75;
+    
+    /* ========================================
+     * 动画时间
+     * ======================================== */
+    --duration-fast: 150ms;
+    --duration-normal: 300ms;
+    --duration-slow: 500ms;
+    --duration-slower: 700ms;
+    
+    /* 缓动函数 */
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --ease-elastic: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+    
+    /* ========================================
+     * 层级 (z-index)
+     * ======================================== */
+    --z-base: 0;
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-fixed: 300;
+    --z-modal-backdrop: 400;
+    --z-modal: 500;
+    --z-popover: 600;
+    --z-tooltip: 700;
+    --z-toast: 800;
+    
+    /* ========================================
+     * 布局尺寸
+     * ======================================== */
+    --header-height: 56px;
+    --footer-height: 64px;
+    --sidebar-width: 280px;
+    --max-content-width: 100%;
+    --card-min-width: 140px;
+    --card-max-width: 200px;
+    
+    /* ========================================
+     * 游戏化装饰效果
+     * Requirements: 8.2, 8.4
+     * ======================================== */
+    
+    /* 卡通边框效果 */
+    --border-cartoon: 3px solid var(--color-text-primary);
+    --border-cartoon-light: 2px solid var(--color-border-medium);
+    --border-dashed-fun: 3px dashed var(--color-primary);
+    
+    /* 气泡效果阴影 */
+    --shadow-bubble: 0 4px 0 var(--color-primary-dark);
+    --shadow-bubble-secondary: 0 4px 0 var(--color-secondary-dark);
+    --shadow-bubble-accent: 0 4px 0 var(--color-accent-dark);
+    --shadow-bubble-success: 0 4px 0 var(--color-success-dark);
+    
+    /* 发光效果 */
+    --glow-primary: 0 0 20px rgba(255, 107, 157, 0.5);
+    --glow-secondary: 0 0 20px rgba(78, 205, 196, 0.5);
+    --glow-accent: 0 0 20px rgba(255, 230, 109, 0.5);
+    --glow-success: 0 0 20px rgba(126, 217, 87, 0.5);
+    
+    /* 星星装饰渐变 */
+    --gradient-star: radial-gradient(circle, #FFE66D 0%, transparent 70%);
+    --gradient-sparkle: radial-gradient(circle, #FFFFFF 0%, transparent 60%);
+    
+    /* 可爱图案背景 */
+    --pattern-dots: radial-gradient(circle, var(--color-primary-light) 2px, transparent 2px);
+    --pattern-dots-size: 20px 20px;
+    --pattern-waves: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        var(--color-primary-bg) 10px,
+        var(--color-primary-bg) 20px
+    );
+    
+    /* 彩虹边框渐变 */
+    --border-rainbow: linear-gradient(
+        90deg,
+        #FF6B9D,
+        #FFA94D,
+        #FFE66D,
+        #7ED957,
+        #4ECDC4,
+        #A78BFA,
+        #FF6B9D
+    );
+    
+    /* 动画弹性参数 */
+    --bounce-scale-up: 1.08;
+    --bounce-scale-down: 0.95;
+    --wiggle-angle: 3deg;
+}
+
+/* ========================================
+ * 深色模式变量（可选）
+ * ======================================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* 深色模式下保持明亮的主题色，但调整背景 */
+        --color-bg-primary: #1A202C;
+        --color-bg-secondary: #2D3748;
+        --color-bg-tertiary: #4A5568;
+        
+        --color-text-primary: #F7FAFC;
+        --color-text-secondary: #E2E8F0;
+        --color-text-muted: #A0AEC0;
+        
+        --color-border-light: #4A5568;
+        --color-border-medium: #718096;
+        --color-border-dark: #A0AEC0;
+    }
+}

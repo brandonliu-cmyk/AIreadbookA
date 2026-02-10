@@ -1,0 +1,1686 @@
+/**
+ * 响应式布局样式 - AI点读应用
+ * Requirements: 4.5 - 确保页面布局在不同屏幕尺寸下保持良好的可读性
+ * 
+ * 断点设计:
+ * - 移动端小屏 (320px - 480px): 手机竖屏
+ * - 移动端大屏 (481px - 767px): 大手机/小平板竖屏
+ * - 平板设备 (768px - 1024px): 平板横竖屏
+ * - 桌面设备 (1025px+): 桌面显示器
+ * 
+ * 触摸目标: 最小 44px (符合 WCAG 2.1 AA 标准)
+ */
+
+/* ========================================
+ * CSS 变量 - 响应式断点
+ * ======================================== */
+:root {
+    /* 触摸目标最小尺寸 */
+    --touch-target-min: 44px;
+    --touch-target-comfortable: 48px;
+    
+    /* 响应式间距 */
+    --responsive-spacing-xs: var(--spacing-xs);
+    --responsive-spacing-sm: var(--spacing-sm);
+    --responsive-spacing-md: var(--spacing-md);
+    --responsive-spacing-lg: var(--spacing-lg);
+}
+
+/* ========================================
+ * 移动端小屏 (320px - 480px)
+ * 手机竖屏 - 紧凑布局
+ * ======================================== */
+@media screen and (max-width: 480px) {
+    /* 根字体大小调整 */
+    :root {
+        --font-size-xs: 11px;
+        --font-size-sm: 13px;
+        --font-size-md: 14px;
+        --font-size-lg: 16px;
+        --font-size-xl: 18px;
+        --font-size-2xl: 22px;
+        --font-size-3xl: 26px;
+        --font-size-4xl: 32px;
+        --font-size-5xl: 40px;
+        
+        /* 响应式间距 */
+        --responsive-spacing-xs: 3px;
+        --responsive-spacing-sm: 6px;
+        --responsive-spacing-md: 12px;
+        --responsive-spacing-lg: 18px;
+    }
+    
+    /* 应用容器 */
+    .app-container {
+        max-width: 100%;
+    }
+    
+    /* 头部样式 */
+    .app-header {
+        height: 52px;
+        padding: 0 var(--spacing-sm);
+    }
+    
+    .app-title {
+        font-size: var(--font-size-lg);
+    }
+    
+    /* 返回和设置按钮 - 确保触摸目标 */
+    .btn-back,
+    .btn-settings {
+        width: var(--touch-target-min);
+        height: var(--touch-target-min);
+        min-width: var(--touch-target-min);
+        min-height: var(--touch-target-min);
+    }
+    
+    /* 主内容区域 */
+    .app-main {
+        padding: var(--spacing-sm);
+    }
+    
+    /* 底部导航 */
+    .app-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+    
+    .bottom-nav {
+        height: 60px;
+        padding: var(--spacing-xs) 0;
+    }
+    
+    /* 导航项 - 确保触摸目标 */
+    .nav-item {
+        min-width: var(--touch-target-min);
+        min-height: var(--touch-target-min);
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+    
+    .nav-icon {
+        font-size: var(--font-size-xl);
+        margin-bottom: 2px;
+    }
+    
+    .nav-label {
+        font-size: var(--font-size-xs);
+    }
+    
+    /* 网格布局 - 2列 */
+    .grid-2,
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+    }
+    
+    /* 学科选择保持3列并排 */
+    .grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-sm);
+    }
+    
+    /* 卡片样式 */
+    .card {
+        padding: var(--spacing-sm);
+        border-radius: var(--radius-lg);
+    }
+    
+    .card-cartoon {
+        padding: var(--spacing-md);
+        border-radius: var(--radius-lg);
+    }
+    
+    /* 学科卡片 */
+    .card-subject {
+        min-height: 100px;
+        padding: var(--spacing-md);
+        border-radius: var(--radius-lg);
+    }
+    
+    .card-subject-icon {
+        font-size: var(--font-size-3xl);
+    }
+    
+    .card-subject-name {
+        font-size: var(--font-size-md);
+    }
+    
+    /* 按钮样式 - 确保触摸目标 */
+    .btn {
+        min-height: var(--touch-target-min);
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: var(--font-size-sm);
+    }
+    
+    .btn-cartoon {
+        min-height: var(--touch-target-min);
+        padding: var(--spacing-sm) var(--spacing-lg);
+        font-size: var(--font-size-md);
+    }
+    
+    .btn-lg {
+        min-height: 52px;
+        padding: var(--spacing-md) var(--spacing-lg);
+    }
+    
+    /* 圆形图标按钮 */
+    .btn-icon-circle {
+        width: var(--touch-target-min);
+        height: var(--touch-target-min);
+    }
+    
+    .btn-icon-circle.btn-sm {
+        width: var(--touch-target-min);
+        height: var(--touch-target-min);
+    }
+    
+    /* 模态框 */
+    .modal-content {
+        max-width: 95%;
+        padding: var(--spacing-md);
+        border-radius: var(--radius-lg);
+    }
+    
+    /* 进度条 */
+    .progress-bar {
+        height: 10px;
+    }
+    
+    /* 加载容器 */
+    .loading-container {
+        min-height: 150px;
+        padding: var(--spacing-lg);
+    }
+    
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+    }
+    
+    /* 主内容区域底部留白（为固定底部导航留空间） */
+    .app-main {
+        padding-bottom: calc(60px + var(--spacing-md));
+    }
+}
+
+/* ========================================
+ * 移动端大屏 (481px - 767px)
+ * 大手机/小平板竖屏 - 适中布局
+ * ======================================== */
+@media screen and (min-width: 481px) and (max-width: 767px) {
+    :root {
+        --font-size-xs: 12px;
+        --font-size-sm: 14px;
+        --font-size-md: 15px;
+        --font-size-lg: 17px;
+        --font-size-xl: 19px;
+        --font-size-2xl: 23px;
+        --font-size-3xl: 28px;
+        --font-size-4xl: 34px;
+        --font-size-5xl: 44px;
+    }
+    
+    /* 应用容器 */
+    .app-container {
+        max-width: 100%;
+    }
+    
+    /* 头部样式 */
+    .app-header {
+        height: 54px;
+        padding: 0 var(--spacing-md);
+    }
+    
+    .app-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    /* 按钮触摸目标 */
+    .btn-back,
+    .btn-settings {
+        width: var(--touch-target-comfortable);
+        height: var(--touch-target-comfortable);
+    }
+    
+    /* 主内容区域 */
+    .app-main {
+        padding: var(--spacing-md);
+    }
+    
+    /* 底部导航 */
+    .bottom-nav {
+        height: 62px;
+    }
+    
+    .nav-item {
+        min-width: var(--touch-target-comfortable);
+        min-height: var(--touch-target-comfortable);
+        padding: var(--spacing-xs) var(--spacing-md);
+    }
+    
+    .nav-icon {
+        font-size: var(--font-size-2xl);
+    }
+    
+    .nav-label {
+        font-size: var(--font-size-sm);
+    }
+    
+    /* 网格布局 - 2-3列 */
+    .grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-md);
+    }
+    
+    .grid-3,
+    .grid-4 {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-md);
+    }
+    
+    /* 学科卡片 */
+    .card-subject {
+        min-height: 120px;
+        padding: var(--spacing-lg);
+    }
+    
+    .card-subject-icon {
+        font-size: var(--font-size-4xl);
+    }
+    
+    .card-subject-name {
+        font-size: var(--font-size-lg);
+    }
+    
+    /* 按钮样式 */
+    .btn-cartoon {
+        min-height: var(--touch-target-comfortable);
+        padding: var(--spacing-sm) var(--spacing-xl);
+        font-size: var(--font-size-md);
+    }
+    
+    /* 模态框 */
+    .modal-content {
+        max-width: 90%;
+        padding: var(--spacing-lg);
+    }
+}
+
+/* ========================================
+ * 平板设备 (768px - 1024px)
+ * 平板横竖屏 - 宽敞布局
+ * ======================================== */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+    :root {
+        --font-size-xs: 12px;
+        --font-size-sm: 14px;
+        --font-size-md: 16px;
+        --font-size-lg: 18px;
+        --font-size-xl: 20px;
+        --font-size-2xl: 24px;
+        --font-size-3xl: 30px;
+        --font-size-4xl: 36px;
+        --font-size-5xl: 48px;
+    }
+    
+    /* 应用容器 */
+    .app-container {
+        max-width: 100%;
+    }
+    
+    /* 头部样式 */
+    .app-header {
+        height: 60px;
+        padding: 0 var(--spacing-lg);
+    }
+    
+    .app-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .btn-back,
+    .btn-settings {
+        width: 48px;
+        height: 48px;
+    }
+    
+    /* 主内容区域 */
+    .app-main {
+        padding: var(--spacing-lg);
+    }
+    
+    /* 底部导航 */
+    .bottom-nav {
+        height: 68px;
+    }
+    
+    .nav-item {
+        min-width: 80px;
+        min-height: 56px;
+        padding: var(--spacing-sm) var(--spacing-lg);
+    }
+    
+    .nav-icon {
+        font-size: var(--font-size-2xl);
+    }
+    
+    .nav-label {
+        font-size: var(--font-size-sm);
+    }
+    
+    /* 网格布局 - 3-4列 */
+    .grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+    
+    .grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-lg);
+    }
+    
+    .grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--spacing-lg);
+    }
+    
+    /* 学科卡片 */
+    .card-subject {
+        min-height: 140px;
+        padding: var(--spacing-lg);
+    }
+    
+    .card-subject-icon {
+        font-size: var(--font-size-5xl);
+    }
+    
+    .card-subject-name {
+        font-size: var(--font-size-lg);
+    }
+    
+    /* 按钮样式 */
+    .btn-cartoon {
+        min-height: 52px;
+        padding: var(--spacing-md) var(--spacing-xl);
+        font-size: var(--font-size-lg);
+    }
+    
+    /* 模态框 */
+    .modal-content {
+        max-width: 600px;
+        padding: var(--spacing-xl);
+    }
+    
+    /* 卡片样式 */
+    .card-cartoon {
+        padding: var(--spacing-xl);
+    }
+}
+
+/* ========================================
+ * 桌面设备 (1025px+)
+ * 桌面显示器 - 完整布局
+ * ======================================== */
+@media screen and (min-width: 1025px) {
+    :root {
+        --font-size-xs: 12px;
+        --font-size-sm: 14px;
+        --font-size-md: 16px;
+        --font-size-lg: 18px;
+        --font-size-xl: 20px;
+        --font-size-2xl: 24px;
+        --font-size-3xl: 30px;
+        --font-size-4xl: 36px;
+        --font-size-5xl: 48px;
+    }
+    
+    /* 应用容器 */
+    .app-container {
+        max-width: 100%;
+    }
+    
+    /* 头部样式 */
+    .app-header {
+        height: var(--header-height);
+        padding: 0 var(--spacing-xl);
+    }
+    
+    .app-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    /* 主内容区域 */
+    .app-main {
+        padding: var(--spacing-xl);
+    }
+    
+    /* 底部导航 */
+    .bottom-nav {
+        height: var(--footer-height);
+    }
+    
+    .nav-item {
+        min-width: 100px;
+        padding: var(--spacing-sm) var(--spacing-xl);
+    }
+    
+    /* 网格布局 */
+    .grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+    
+    .grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-lg);
+    }
+    
+    .grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--spacing-lg);
+    }
+    
+    /* 学科卡片 */
+    .card-subject {
+        min-height: 160px;
+    }
+    
+    /* 模态框 */
+    .modal-content {
+        max-width: 700px;
+    }
+    
+    /* 悬停效果增强（桌面端） */
+    .card-subject:hover {
+        transform: translateY(-8px) scale(1.05) rotate(-2deg);
+    }
+    
+    .btn-cartoon:hover {
+        transform: translateY(-4px) scale(1.05);
+    }
+}
+
+/* ========================================
+ * 横屏模式优化
+ * ======================================== */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    /* 头部紧凑 */
+    .app-header {
+        height: 48px;
+    }
+    
+    .app-title {
+        font-size: var(--font-size-md);
+    }
+    
+    /* 底部导航紧凑 */
+    .bottom-nav {
+        height: 52px;
+    }
+    
+    .nav-item {
+        flex-direction: row;
+        gap: var(--spacing-xs);
+    }
+    
+    .nav-icon {
+        font-size: var(--font-size-lg);
+        margin-bottom: 0;
+    }
+    
+    .nav-label {
+        font-size: var(--font-size-xs);
+    }
+    
+    /* 主内容区域 */
+    .app-main {
+        padding: var(--spacing-sm);
+    }
+    
+    /* 学科卡片横向布局 */
+    .card-subject {
+        min-height: 80px;
+        flex-direction: row;
+        gap: var(--spacing-sm);
+    }
+    
+    .card-subject-icon {
+        font-size: var(--font-size-2xl);
+    }
+    
+    /* 模态框 */
+    .modal-content {
+        max-height: 85vh;
+    }
+}
+
+/* ========================================
+ * 触摸设备优化
+ * ======================================== */
+@media (hover: none) and (pointer: coarse) {
+    /* 移除悬停效果，改用触摸反馈 */
+    .card-subject:hover {
+        transform: none;
+    }
+    
+    .card-subject:active {
+        transform: scale(0.95);
+    }
+    
+    .btn-cartoon:hover {
+        transform: none;
+    }
+    
+    .btn-cartoon:active {
+        transform: scale(0.95);
+    }
+    
+    /* 增大触摸目标 */
+    .btn,
+    .btn-cartoon,
+    .nav-item,
+    .card-subject,
+    .lesson-item,
+    .chapter-header,
+    .voice-card,
+    .clickable-element {
+        min-height: var(--touch-target-min);
+    }
+    
+    /* 增加点击区域间距 */
+    .grid {
+        gap: var(--spacing-md);
+    }
+    
+    /* 触摸高亮效果 */
+    .tap-highlight {
+        -webkit-tap-highlight-color: rgba(255, 107, 157, 0.3);
+    }
+}
+
+/* ========================================
+ * 安全区域适配 (iPhone X 及以上)
+ * ======================================== */
+@supports (padding: max(0px)) {
+    .app-header {
+        padding-top: max(0px, env(safe-area-inset-top));
+        padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+    }
+    
+    .app-footer {
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+    }
+    
+    .app-main {
+        padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+    }
+}
+
+/* ========================================
+ * 高对比度模式支持
+ * ======================================== */
+@media (prefers-contrast: high) {
+    .card-subject {
+        border: 3px solid currentColor;
+    }
+    
+    .btn-cartoon {
+        border: 2px solid currentColor;
+    }
+    
+    .clickable-element {
+        border: 2px solid var(--color-text-primary);
+    }
+}
+
+/* ========================================
+ * 大字体模式支持
+ * ======================================== */
+@media (prefers-reduced-motion: no-preference) {
+    /* 保持动画效果 */
+}
+
+/* 用户偏好大字体 */
+@media screen and (min-resolution: 1dppx) {
+    /* 标准分辨率设备 */
+}
+
+@media screen and (min-resolution: 2dppx) {
+    /* 高分辨率设备 (Retina) */
+    .card-subject {
+        border-width: 0.5px;
+    }
+}
+
+
+/* ========================================
+ * 组件特定响应式样式
+ * ======================================== */
+
+/* ----------------------------------------
+ * 学科选择器响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .subject-selector-header {
+        padding: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .subject-selector-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .subject-selector-subtitle {
+        font-size: var(--font-size-sm);
+    }
+    
+    .subject-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-xs);
+        padding: var(--spacing-xs);
+    }
+}
+
+@media screen and (min-width: 481px) and (max-width: 767px) {
+    .subject-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-md);
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .subject-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-lg);
+    }
+}
+
+/* ----------------------------------------
+ * 教材选择器响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .textbook-selector-header {
+        padding: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .textbook-selector-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .textbook-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+    }
+    
+    .card-textbook {
+        border-radius: var(--radius-lg);
+    }
+    
+    .card-textbook-cover {
+        aspect-ratio: 1/1;
+    }
+    
+    .card-textbook-info {
+        padding: var(--spacing-sm);
+    }
+    
+    .card-textbook-title {
+        font-size: var(--font-size-sm);
+    }
+    
+    .textbook-cover-icon {
+        font-size: var(--font-size-3xl);
+    }
+}
+
+@media screen and (min-width: 481px) and (max-width: 767px) {
+    .textbook-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-md);
+    }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+    .textbook-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-lg);
+    }
+}
+
+@media screen and (min-width: 1025px) {
+    .textbook-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+
+/* ----------------------------------------
+ * 章节导航器响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .chapter-navigator-header {
+        padding: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .chapter-navigator-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .chapter-list {
+        gap: var(--spacing-sm);
+        padding: var(--spacing-xs);
+    }
+    
+    .chapter-item {
+        border-radius: var(--radius-lg);
+    }
+    
+    .chapter-header {
+        padding: var(--spacing-sm) var(--spacing-md);
+        min-height: var(--touch-target-min);
+    }
+    
+    .chapter-name {
+        font-size: var(--font-size-md);
+    }
+    
+    .chapter-expand-icon {
+        font-size: var(--font-size-lg);
+    }
+    
+    .lesson-item {
+        padding: var(--spacing-sm) var(--spacing-md);
+        padding-left: calc(var(--spacing-md) + var(--spacing-lg));
+        min-height: var(--touch-target-min);
+    }
+    
+    .lesson-item:hover {
+        padding-left: calc(var(--spacing-md) + var(--spacing-lg) + 4px);
+    }
+    
+    .lesson-name {
+        font-size: var(--font-size-sm);
+    }
+    
+    .lesson-icon {
+        font-size: var(--font-size-md);
+    }
+    
+    .lesson-preview-content {
+        max-width: 95%;
+        padding: var(--spacing-md);
+    }
+    
+    .preview-title {
+        font-size: var(--font-size-lg);
+    }
+    
+    .preview-footer {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .preview-close-btn,
+    .preview-start-btn {
+        max-width: none;
+        width: 100%;
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .chapter-list {
+        gap: var(--spacing-md);
+    }
+    
+    .chapter-header {
+        padding: var(--spacing-md) var(--spacing-xl);
+    }
+    
+    .lesson-item {
+        padding: var(--spacing-md) var(--spacing-xl);
+        padding-left: calc(var(--spacing-xl) + var(--spacing-xl));
+    }
+}
+
+
+/* ----------------------------------------
+ * 页面渲染器响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .page-renderer-wrapper {
+        padding: var(--spacing-xs);
+        min-height: 50px;
+    }
+    
+    .book-page-container {
+        max-width: 100%;
+    }
+    
+    .book-page-inner {
+        padding: var(--spacing-sm);
+        min-height: 30px;
+    }
+    
+    .clickable-elements-container {
+        min-height: 20px;
+    }
+    
+    .clickable-element {
+        padding: var(--spacing-xs);
+        font-size: var(--font-size-sm);
+        min-height: var(--touch-target-min);
+        border-radius: var(--radius-sm);
+    }
+    
+    .clickable-element-indicator {
+        font-size: var(--font-size-xs);
+    }
+    
+    .page-skeleton {
+        padding: var(--spacing-md);
+    }
+    
+    .skeleton-title {
+        height: 20px;
+    }
+    
+    .skeleton-line {
+        height: 12px;
+    }
+    
+    .skeleton-element {
+        min-width: 70px;
+        height: 28px;
+    }
+}
+
+@media screen and (min-width: 481px) and (max-width: 767px) {
+    .book-page-container {
+        max-width: 100%;
+    }
+    
+    .book-page-inner {
+        padding: var(--spacing-md);
+        min-height: 30px;
+    }
+    
+    .clickable-elements-container {
+        min-height: 20px;
+    }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+    .book-page-container {
+        max-width: 700px;
+    }
+    
+    .book-page-inner {
+        padding: var(--spacing-xl);
+        min-height: 50px;
+    }
+    
+    .clickable-elements-container {
+        min-height: 30px;
+    }
+}
+
+@media screen and (min-width: 1025px) {
+    .book-page-container {
+        max-width: 800px;
+    }
+    
+    .book-page-inner {
+        min-height: 50px;
+    }
+    
+    .clickable-elements-container {
+        min-height: 30px;
+    }
+}
+
+
+/* ----------------------------------------
+ * 翻页控制器响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .book-flipper-wrapper {
+        padding: var(--spacing-xs);
+    }
+    
+    .book-flipper-container {
+        border-radius: var(--radius-lg);
+    }
+    
+    .book-flipper-content {
+        padding: var(--spacing-sm);
+    }
+    
+    .book-flipper-content .current-page {
+    }
+    
+    .book-flipper-page-indicator {
+        gap: var(--spacing-xs);
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+    
+    .page-nav-btn {
+        width: var(--touch-target-min);
+        height: var(--touch-target-min);
+    }
+    
+    .page-indicator-display {
+        font-size: var(--font-size-md);
+        min-width: 50px;
+    }
+    
+    .current-page-num {
+        font-size: var(--font-size-lg);
+    }
+    
+    .book-corner {
+        font-size: var(--font-size-xs);
+    }
+    
+    .book-flipper-boundary-message {
+        padding: var(--spacing-sm) var(--spacing-md);
+        max-width: 90%;
+    }
+    
+    .boundary-icon {
+        font-size: var(--font-size-xl);
+    }
+    
+    .boundary-text {
+        font-size: var(--font-size-sm);
+    }
+}
+
+@media screen and (min-width: 481px) and (max-width: 767px) {
+    .book-flipper-container {
+    }
+    
+    .book-flipper-content {
+        padding: var(--spacing-md);
+    }
+    
+    .book-flipper-content .current-page {
+    }
+}
+
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+    .book-flipper-container {
+        max-width: 700px;
+    }
+    
+    .book-flipper-content {
+        padding: var(--spacing-lg);
+    }
+    
+    .book-flipper-content .current-page {
+    }
+    
+    .page-nav-btn {
+        width: 52px;
+        height: 52px;
+    }
+}
+
+@media screen and (min-width: 1025px) {
+    .book-flipper-container {
+        max-width: 800px;
+    }
+    
+    .book-flipper-content {
+    }
+    
+    .book-flipper-content .current-page {
+    }
+}
+
+
+/* ----------------------------------------
+ * 音色选择器响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .voice-selector-panel {
+        padding: var(--spacing-sm);
+    }
+    
+    .voice-selector-header {
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .voice-selector-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .voice-list {
+        gap: var(--spacing-sm);
+    }
+    
+    .voice-card {
+        flex-wrap: wrap;
+        padding: var(--spacing-sm);
+        min-height: var(--touch-target-min);
+    }
+    
+    .voice-card-icon {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .voice-type-icon {
+        font-size: var(--font-size-2xl);
+    }
+    
+    .voice-card-content {
+        flex: 1 1 calc(100% - 60px);
+    }
+    
+    .voice-name {
+        font-size: var(--font-size-md);
+    }
+    
+    .voice-description {
+        font-size: var(--font-size-xs);
+    }
+    
+    .voice-card-actions {
+        width: 100%;
+        margin-top: var(--spacing-sm);
+    }
+    
+    .btn-preview {
+        width: 100%;
+        justify-content: center;
+        min-height: var(--touch-target-min);
+    }
+    
+    .voice-selected-indicator {
+        top: var(--spacing-xs);
+        right: var(--spacing-xs);
+        width: 24px;
+        height: 24px;
+    }
+}
+
+@media screen and (min-width: 481px) and (max-width: 767px) {
+    .voice-card {
+        padding: var(--spacing-md);
+    }
+    
+    .voice-card-icon {
+        width: 56px;
+        height: 56px;
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .voice-list {
+        gap: var(--spacing-md);
+    }
+    
+    .voice-card {
+        padding: var(--spacing-lg);
+    }
+    
+    .voice-card-icon {
+        width: 64px;
+        height: 64px;
+    }
+    
+    .voice-type-icon {
+        font-size: var(--font-size-3xl);
+    }
+}
+
+
+/* ----------------------------------------
+ * 进度追踪器响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .progress-bar {
+        height: 8px;
+    }
+    
+    .progress-bar-fill::after {
+        animation-duration: 2.5s;
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .progress-bar {
+        height: 14px;
+    }
+}
+
+/* ----------------------------------------
+ * 祝贺动画响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .congratulations-content {
+        padding: var(--spacing-lg) var(--spacing-md);
+        width: 95%;
+        border-radius: var(--radius-xl);
+    }
+    
+    .mascot-emoji {
+        font-size: 56px;
+    }
+    
+    .congratulations-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .congratulations-message {
+        font-size: var(--font-size-sm);
+    }
+    
+    .congratulations-stars .star {
+        font-size: var(--font-size-2xl);
+    }
+    
+    .congratulations-button {
+        padding: var(--spacing-sm) var(--spacing-lg);
+        font-size: var(--font-size-md);
+        min-height: var(--touch-target-min);
+    }
+    
+    .sparkle {
+        font-size: var(--font-size-sm);
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .congratulations-content {
+        width: 420px;
+        padding: var(--spacing-2xl);
+    }
+    
+    .mascot-emoji {
+        font-size: 100px;
+    }
+    
+    .congratulations-title {
+        font-size: var(--font-size-4xl);
+    }
+}
+
+
+/* ----------------------------------------
+ * 引导教程响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .tutorial-container {
+        padding: var(--spacing-xs);
+    }
+    
+    .tutorial-step {
+        padding: var(--spacing-md) var(--spacing-sm);
+        border-radius: var(--radius-xl);
+    }
+    
+    .tutorial-skip-btn {
+        top: var(--spacing-sm);
+        right: var(--spacing-sm);
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: var(--font-size-xs);
+        min-height: 32px;
+    }
+    
+    .tutorial-mascot {
+        font-size: 2.5rem;
+    }
+    
+    .tutorial-icon {
+        font-size: 2rem;
+    }
+    
+    .tutorial-title {
+        font-size: var(--font-size-lg);
+    }
+    
+    .tutorial-description {
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .tutorial-progress {
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .tutorial-dot {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .tutorial-nav {
+        gap: var(--spacing-sm);
+    }
+    
+    .tutorial-btn {
+        min-width: 90px;
+        min-height: var(--touch-target-min);
+        padding: var(--spacing-xs) var(--spacing-md);
+        font-size: var(--font-size-sm);
+    }
+    
+    .tutorial-btn-placeholder {
+        width: 90px;
+    }
+    
+    .tutorial-star {
+        font-size: 1rem;
+    }
+    
+    .celebration-mascot {
+        font-size: 3.5rem;
+    }
+    
+    .celebration-title {
+        font-size: var(--font-size-2xl);
+    }
+    
+    .celebration-text {
+        font-size: var(--font-size-md);
+    }
+    
+    .celebration-stars .star {
+        font-size: 1.5rem;
+    }
+}
+
+@media screen and (min-width: 481px) and (max-width: 767px) {
+    .tutorial-container {
+        max-width: 380px;
+    }
+    
+    .tutorial-step {
+        padding: var(--spacing-lg);
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .tutorial-container {
+        max-width: 450px;
+    }
+    
+    .tutorial-step {
+        padding: var(--spacing-xl) var(--spacing-lg);
+    }
+    
+    .tutorial-mascot {
+        font-size: 5rem;
+    }
+    
+    .tutorial-icon {
+        font-size: 4rem;
+    }
+    
+    .tutorial-title {
+        font-size: var(--font-size-2xl);
+    }
+}
+
+
+/* ----------------------------------------
+ * 缩放控制响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .zoom-controls {
+        padding: 0;
+        gap: 2px;
+    }
+    
+    .zoom-btn {
+        width: var(--touch-target-min);
+        height: var(--touch-target-min);
+    }
+    
+    .zoom-btn-reset {
+        min-width: var(--touch-target-min);
+    }
+    
+    .zoom-btn-text {
+        font-size: 10px;
+    }
+    
+    .zoom-hint {
+        font-size: var(--font-size-md);
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .zoom-controls {
+    }
+    
+    .zoom-btn {
+        width: 52px;
+        height: 52px;
+    }
+    
+    .zoom-btn-reset {
+        min-width: 80px;
+    }
+}
+
+/* ----------------------------------------
+ * 错误和空状态响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .error-container,
+    .textbook-empty-state,
+    .chapter-empty-state,
+    .empty-page-container {
+        min-height: 200px;
+        padding: var(--spacing-lg);
+    }
+    
+    .error-icon,
+    .empty-icon {
+        font-size: 56px;
+    }
+    
+    .error-message,
+    .empty-title {
+        font-size: var(--font-size-md);
+    }
+    
+    .empty-subtitle {
+        font-size: var(--font-size-sm);
+        max-width: 240px;
+    }
+    
+    .retry-btn {
+        min-width: 100px;
+        min-height: var(--touch-target-min);
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .error-container,
+    .textbook-empty-state,
+    .chapter-empty-state,
+    .empty-page-container {
+        min-height: 350px;
+        padding: var(--spacing-2xl);
+    }
+    
+    .error-icon,
+    .empty-icon {
+        font-size: 100px;
+    }
+}
+
+
+/* ----------------------------------------
+ * 加载动画响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .loading-container {
+        min-height: 150px;
+        padding: var(--spacing-md);
+    }
+    
+    .loading-spinner {
+        width: 36px;
+        height: 36px;
+        border-width: 3px;
+    }
+    
+    .loading-text {
+        font-size: var(--font-size-xs);
+        margin-top: var(--spacing-sm);
+    }
+    
+    .loading-dots span {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .loading-book-animation {
+        width: 48px;
+        height: 64px;
+    }
+    
+    .loading-cute {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .loading-container {
+        min-height: 250px;
+    }
+    
+    .loading-spinner {
+        width: 56px;
+        height: 56px;
+    }
+    
+    .loading-dots span {
+        width: 14px;
+        height: 14px;
+    }
+}
+
+/* ----------------------------------------
+ * Toast 提示响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .toast-container {
+        bottom: calc(60px + var(--spacing-sm));
+        left: var(--spacing-sm);
+        right: var(--spacing-sm);
+        transform: none;
+    }
+    
+    .toast {
+        padding: var(--spacing-xs) var(--spacing-md);
+        font-size: var(--font-size-xs);
+        border-radius: var(--radius-lg);
+        text-align: center;
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .toast-container {
+        bottom: calc(var(--footer-height) + var(--spacing-lg));
+    }
+    
+    .toast {
+        padding: var(--spacing-sm) var(--spacing-xl);
+        font-size: var(--font-size-md);
+    }
+}
+
+/* ----------------------------------------
+ * 模态框响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .modal-overlay {
+        padding: var(--spacing-sm);
+    }
+    
+    .modal-content {
+        max-width: 100%;
+        max-height: 90vh;
+        padding: var(--spacing-md);
+        border-radius: var(--radius-lg);
+        margin: var(--spacing-sm);
+    }
+}
+
+@media screen and (min-width: 481px) and (max-width: 767px) {
+    .modal-content {
+        max-width: 90%;
+        padding: var(--spacing-lg);
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .modal-content {
+        max-width: 600px;
+        padding: var(--spacing-xl);
+    }
+}
+
+@media screen and (min-width: 1025px) {
+    .modal-content {
+        max-width: 700px;
+    }
+}
+
+
+/* ----------------------------------------
+ * 徽章和装饰响应式
+ * ---------------------------------------- */
+@media screen and (max-width: 480px) {
+    .badge {
+        padding: 2px var(--spacing-xs);
+        font-size: 10px;
+    }
+    
+    .checkmark-circle {
+        width: 20px;
+        height: 20px;
+        font-size: var(--font-size-xs);
+    }
+    
+    .decoration-rainbow-line {
+        height: 3px;
+    }
+    
+    .decoration-wave {
+        height: 16px;
+    }
+}
+
+/* ----------------------------------------
+ * 打印样式
+ * ---------------------------------------- */
+@media print {
+    .app-header,
+    .app-footer,
+    .btn-back,
+    .btn-settings,
+    .zoom-controls,
+    .toast-container,
+    .modal-overlay {
+        display: none !important;
+    }
+    
+    .app-main {
+        padding: 0;
+    }
+    
+    .app-container {
+        max-width: 100%;
+        box-shadow: none;
+    }
+    
+    .book-page {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+}
+
+/* ========================================
+ * 辅助功能增强
+ * ======================================== */
+
+/* 焦点可见性增强 */
+@media screen and (max-width: 480px) {
+    .focus-ring:focus,
+    .focus-ring:focus-visible {
+        box-shadow: 0 0 0 2px var(--color-primary-light);
+    }
+    
+    button:focus-visible,
+    a:focus-visible,
+    [tabindex]:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+}
+
+/* 键盘导航增强 */
+.nav-item:focus-visible,
+.card-subject:focus-visible,
+.lesson-item:focus-visible,
+.chapter-header:focus-visible,
+.voice-card:focus-visible,
+.clickable-element:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* ========================================
+ * 性能优化
+ * ======================================== */
+
+/* 减少移动端动画复杂度 */
+@media screen and (max-width: 480px) {
+    .card-subject:hover,
+    .card-textbook:hover,
+    .btn-cartoon:hover {
+        transform: scale(0.98);
+    }
+    
+    .card-subject:active,
+    .card-textbook:active,
+    .btn-cartoon:active {
+        transform: scale(0.95);
+    }
+    
+    /* 简化阴影效果 */
+    .card,
+    .card-cartoon,
+    .card-subject,
+    .card-textbook {
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .card:hover,
+    .card-cartoon:hover {
+        box-shadow: var(--shadow-md);
+    }
+}
+
+/* GPU 加速优化 */
+.book-flipper-container,
+.flip-page,
+.modal-content,
+.congratulations-content,
+.tutorial-step {
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+/* 滚动性能优化 */
+.app-main,
+.chapter-list,
+.voice-list,
+.textbook-grid {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-main,
+    .chapter-list,
+    .voice-list,
+    .textbook-grid {
+        scroll-behavior: auto;
+    }
+}

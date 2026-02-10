@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TextbookSelector 测试</title>
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/main.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-suite {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-suite h2 {
+            margin-top: 0;
+            color: #555;
+            font-size: 1.1em;
+        }
+        .test-case {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .test-case.pass {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .test-case.fail {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .test-case .icon {
+            font-size: 1.2em;
+        }
+        .summary {
+            background: #333;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .summary.all-pass {
+            background: #4CAF50;
+        }
+        .summary.has-fail {
+            background: #f44336;
+        }
+        .error-detail {
+            font-size: 0.85em;
+            color: #c62828;
+            margin-left: 30px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        #test-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>📖 TextbookSelector 单元测试</h1>
+    <div id="testResults"></div>
+    <div id="summary" class="summary"></div>
+    
+    <!-- 测试用的隐藏容器 -->
+    <div id="test-container"></div>
+
+    <!-- 加载依赖 -->
+    <script src="../js/data/DataManager.js"></script>
+    <script src="../js/components/TextbookSelector.js"></script>
+    
+    <script>
+        // 简单的测试框架
+        const testResults = [];
+        let currentSuite = '';
+        let beforeEachFn = null;
+        let afterEachFn = null;
+
+        function describe(name, fn) {
+            currentSuite = name;
+            beforeEachFn = null;
+            afterEachFn = null;
+            fn();
+        }
+
+        function beforeEach(fn) {
+            beforeEachFn = fn;
+        }
+
+        function afterEach(fn) {
+            afterEachFn = fn;
+        }
+
+        function it(name, fn) {
+            try {
+                if (beforeEachFn) beforeEachFn();
+                fn();
+                testResults.push({ suite: currentSuite, name, pass: true });
+            } catch (error) {
+                testResults.push({ suite: currentSuite, name, pass: false, error: error.message + '\n' + error.stack });
+            } finally {
+                if (afterEachFn) afterEachFn();
+            }
+        }
+
+        // 异步测试支持
+        async function itAsync(name, fn) {
+            try {
+                if (beforeEachFn) beforeEachFn();
+                await fn();
+                testResults.push({ suite: currentSuite, name, pass: true });
+            } catch (error) {
+                testResults.push({ suite: currentSuite, name, pass: false, error: error.message + '\n' + error.stack });
+            } finally {
+                if (afterEachFn) afterEachFn();
+            }
+        }
+
+        const expect = (actual) => ({
+            to: {
+                be: {
+                    an: {
+                        instanceof: (expected) => {
+                            if (!(actual instanceof expected)) {
+                                throw new Error(`Expected instance of ${expected.name}, got ${actual?.constructor?.name}`);
+                            }
+                        },
+                        array: () => {
+                            if (!Array.isArray(actual)) {
+                                throw new Error(`Expected array, got ${typeof actual}`);
+                            }
+                        }
+                    },
+                    null: () => {
+                        if (actual !== null) {
+                            throw new Error(`Expected null, got ${JSON.stringify(actual)}`);
+                        }
+                    },
+                    true: () => {
+                        if (actual !== true) {
+                            throw new Error(`Expected true, got ${actual}`);
+                        }
+                    },
+                    false: () => {
+                        if (actual !== false) {
+                            throw new Error(`Expected false, got ${actual}`);
+                        }
+                    }
+                },
+                equal: (expected) => {
+                    if (actual !== expected) {
+                        throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+                    }
+                },
+                deep: {
+                    equal: (expected) => {
+                        if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                            throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+                        }
+                    }
+                },
+                not: {
+                    be: {
+                        null: () => {
+                            if (actual === null) {
+                                throw new Error('Expected not null, got null');
+                            }
+                        }
+                    }
+                },
+                include: (expected) => {
+                    if (typeof actual === 'string') {
+                        if (!actual.includes(expected)) {
+                            throw new Error(`Expected "${actual}" to include "${expected}"`);
+                        }
+                    }
+                },
+                throw: (expectedMessage) => {
+                    let threw = false;
+                    let errorMessage = '';
+                    try {
+                        actual();
+                    } catch (e) {
+                        threw = true;
+                        errorMessage = e.message;
+                    }
+                    if (!threw) {
+                        throw new Error('Expected function to throw');
+                    }
+                    if (expectedMessage && errorMessage !== expectedMessage) {
+                        throw new Error(`Expected error "${expectedMessage}", got "${errorMessage}"`);
+                    }
+                }
+            },
+            fail: (message) => {
+                throw new Error(message || 'Test failed');
+            }
+        });
+
+        // 模拟教材数据
+        const mockTextbooks = [
+            {
+                id: 'english-pep-3-1',
+                subjectId: 'english',
+                name: 'PEP英语三年级上册',
+                publisher: '人民教育出版社',
+                grade: 3,
+                semester: '上',
+                coverImage: 'assets/images/covers/english-pep-3-1.png',
+                totalChapters: 6
+            },
+            {
+                id: 'english-pep-3-2',
+                subjectId: 'english',
+                name: 'PEP英语三年级下册',
+                publisher: '人民教育出版社',
+                grade: 3,
+                semester: '下',
+                coverImage: 'assets/images/covers/english-pep-3-2.png',
+                totalChapters: 6
+            },
+            {
+                id: 'english-pep-4-1',
+                subjectId: 'english',
+                name: 'PEP英语四年级上册',
+                publisher: '人民教育出版社',
+                grade: 4,
+                semester: '上',
+                coverImage: 'assets/images/covers/english-pep-4-1.png',
+                totalChapters: 6
+            }
+        ];
+
+        let container;
+        let selector;
+        let mockDataManager;
+
+        // ========================================
+        // 测试用例
+        // ========================================
+
+        describe('构造函数', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+            });
+
+            it('应该正确创建实例', () => {
+                selector = new TextbookSelector(container);
+                expect(selector).to.be.an.instanceof(TextbookSelector);
+                selector.destroy();
+            });
+
+            it('应该在没有容器时抛出错误', () => {
+                expect(() => {
+                    new TextbookSelector(null);
+                }).to.throw('TextbookSelector requires a valid HTMLElement container');
+            });
+
+            it('应该在容器不是HTMLElement时抛出错误', () => {
+                expect(() => {
+                    new TextbookSelector('not-an-element');
+                }).to.throw('TextbookSelector requires a valid HTMLElement container');
+            });
+        });
+
+        describe('loadTextbooks', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+                mockDataManager = {
+                    getTextbooks: (subjectId) => Promise.resolve(mockTextbooks.filter(t => t.subjectId === subjectId))
+                };
+                selector = new TextbookSelector(container);
+                selector.setDataManager(mockDataManager);
+                selector.setDebug(false);
+            });
+
+            afterEach(() => {
+                if (selector) selector.destroy();
+            });
+
+            itAsync('应该成功加载教材列表', async () => {
+                const textbooks = await selector.loadTextbooks('english');
+                expect(textbooks).to.be.an.array();
+                expect(textbooks.length).to.equal(3);
+            });
+
+            itAsync('应该记录当前学科ID', async () => {
+                await selector.loadTextbooks('english');
+                expect(selector.getCurrentSubjectId()).to.equal('english');
+            });
+        });
+
+        describe('render', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+                selector = new TextbookSelector(container);
+                selector.setDebug(false);
+            });
+
+            afterEach(() => {
+                if (selector) selector.destroy();
+            });
+
+            it('应该正确渲染教材列表', () => {
+                selector.render(mockTextbooks);
+                const cards = container.querySelectorAll('.card-textbook');
+                expect(cards.length).to.equal(3);
+            });
+
+            it('应该显示教材标题', () => {
+                selector.render(mockTextbooks);
+                const titles = container.querySelectorAll('.card-textbook-title');
+                expect(titles[0].textContent).to.equal('PEP英语三年级上册');
+            });
+
+            it('应该显示出版社信息', () => {
+                selector.render(mockTextbooks);
+                const publishers = container.querySelectorAll('.card-textbook-publisher');
+                expect(publishers[0].textContent).to.equal('人民教育出版社');
+            });
+
+            it('应该显示年级和学期信息', () => {
+                selector.render(mockTextbooks);
+                const grades = container.querySelectorAll('.textbook-grade');
+                const semesters = container.querySelectorAll('.textbook-semester');
+                expect(grades[0].textContent).to.include('3年级');
+                expect(semesters[0].textContent).to.include('上学期');
+            });
+
+            it('应该在教材列表为空时显示空状态', () => {
+                selector.render([]);
+                const emptyState = container.querySelector('.textbook-empty-state');
+                expect(emptyState).to.not.be.null();
+            });
+
+            it('应该在空状态时显示友好提示', () => {
+                selector.render([]);
+                const emptyTitle = container.querySelector('.empty-title');
+                expect(emptyTitle.textContent).to.equal('内容即将上线');
+            });
+
+            it('应该在textbooks不是数组时抛出错误', () => {
+                expect(() => {
+                    selector.render('not-an-array');
+                }).to.throw('textbooks must be an array');
+            });
+
+            it('应该创建页面标题', () => {
+                selector.render(mockTextbooks);
+                const title = container.querySelector('.textbook-selector-title');
+                expect(title).to.not.be.null();
+                expect(title.textContent).to.include('选择教材');
+            });
+        });
+
+        describe('selectTextbook', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+                selector = new TextbookSelector(container);
+                selector.setDebug(false);
+                selector.render(mockTextbooks);
+            });
+
+            afterEach(() => {
+                if (selector) selector.destroy();
+            });
+
+            it('应该正确选择教材', () => {
+                selector.selectTextbook('english-pep-3-1');
+                const selected = selector.getSelectedTextbook();
+                expect(selected).to.not.be.null();
+                expect(selected.id).to.equal('english-pep-3-1');
+            });
+
+            it('应该高亮显示选中的教材', () => {
+                selector.selectTextbook('english-pep-3-1');
+                const selectedCard = container.querySelector('[data-textbook-id="english-pep-3-1"]');
+                expect(selectedCard.classList.contains('selected')).to.be.true();
+            });
+
+            it('应该设置aria-selected属性', () => {
+                selector.selectTextbook('english-pep-3-1');
+                const selectedCard = container.querySelector('[data-textbook-id="english-pep-3-1"]');
+                expect(selectedCard.getAttribute('aria-selected')).to.equal('true');
+            });
+
+            it('应该移除其他教材的选中状态', () => {
+                selector.selectTextbook('english-pep-3-1');
+                selector.selectTextbook('english-pep-3-2');
+                const firstCard = container.querySelector('[data-textbook-id="english-pep-3-1"]');
+                const secondCard = container.querySelector('[data-textbook-id="english-pep-3-2"]');
+                expect(firstCard.classList.contains('selected')).to.be.false();
+                expect(secondCard.classList.contains('selected')).to.be.true();
+            });
+
+            it('应该触发选择回调', () => {
+                let callbackCalled = false;
+                let selectedTextbook = null;
+                selector.onSelect((textbook) => {
+                    callbackCalled = true;
+                    selectedTextbook = textbook;
+                });
+                selector.selectTextbook('english-pep-3-1');
+                expect(callbackCalled).to.be.true();
+                expect(selectedTextbook.id).to.equal('english-pep-3-1');
+            });
+        });
+
+        describe('getSelectedTextbook', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+                selector = new TextbookSelector(container);
+                selector.setDebug(false);
+                selector.render(mockTextbooks);
+            });
+
+            afterEach(() => {
+                if (selector) selector.destroy();
+            });
+
+            it('应该在未选择时返回null', () => {
+                const selected = selector.getSelectedTextbook();
+                expect(selected).to.be.null();
+            });
+
+            it('应该返回选中的教材对象', () => {
+                selector.selectTextbook('english-pep-3-1');
+                const selected = selector.getSelectedTextbook();
+                expect(selected).to.deep.equal(mockTextbooks[0]);
+            });
+        });
+
+        describe('showLoading', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+                selector = new TextbookSelector(container);
+                selector.setDebug(false);
+            });
+
+            afterEach(() => {
+                if (selector) selector.destroy();
+            });
+
+            it('应该显示加载动画', () => {
+                selector.showLoading();
+                const loadingContainer = container.querySelector('.loading-container');
+                expect(loadingContainer).to.not.be.null();
+            });
+
+            it('应该显示加载文本', () => {
+                selector.showLoading();
+                const loadingText = container.querySelector('.loading-text');
+                expect(loadingText.textContent).to.include('正在加载教材');
+            });
+
+            it('应该显示可爱的书本动画', () => {
+                selector.showLoading();
+                const bookAnimation = container.querySelector('.loading-book-animation');
+                expect(bookAnimation).to.not.be.null();
+            });
+
+            it('应该显示跳动的点点', () => {
+                selector.showLoading();
+                const loadingDots = container.querySelector('.loading-dots');
+                expect(loadingDots).to.not.be.null();
+            });
+
+            it('应该设置isLoading为true', () => {
+                selector.showLoading();
+                expect(selector.isLoading()).to.be.true();
+            });
+        });
+
+        describe('hideLoading', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+                selector = new TextbookSelector(container);
+                selector.setDebug(false);
+            });
+
+            afterEach(() => {
+                if (selector) selector.destroy();
+            });
+
+            it('应该设置isLoading为false', () => {
+                selector.showLoading();
+                selector.hideLoading();
+                expect(selector.isLoading()).to.be.false();
+            });
+        });
+
+        describe('clearSelection', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+                selector = new TextbookSelector(container);
+                selector.setDebug(false);
+                selector.render(mockTextbooks);
+            });
+
+            afterEach(() => {
+                if (selector) selector.destroy();
+            });
+
+            it('应该清除选中状态', () => {
+                selector.selectTextbook('english-pep-3-1');
+                selector.clearSelection();
+                const selected = selector.getSelectedTextbook();
+                expect(selected).to.be.null();
+            });
+
+            it('应该移除所有卡片的选中样式', () => {
+                selector.selectTextbook('english-pep-3-1');
+                selector.clearSelection();
+                const selectedCards = container.querySelectorAll('.card-textbook.selected');
+                expect(selectedCards.length).to.equal(0);
+            });
+        });
+
+        describe('showError', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+                selector = new TextbookSelector(container);
+                selector.setDebug(false);
+            });
+
+            afterEach(() => {
+                if (selector) selector.destroy();
+            });
+
+            it('应该显示错误信息', () => {
+                selector.showError('测试错误');
+                const errorMessage = container.querySelector('.error-message');
+                expect(errorMessage.textContent).to.equal('测试错误');
+            });
+
+            it('应该显示重试按钮', () => {
+                selector.showError('测试错误');
+                const retryBtn = container.querySelector('.retry-btn');
+                expect(retryBtn).to.not.be.null();
+            });
+
+            it('应该在点击重试按钮时触发回调', () => {
+                let retryCalled = false;
+                selector.showError('测试错误', () => {
+                    retryCalled = true;
+                });
+                const retryBtn = container.querySelector('.retry-btn');
+                retryBtn.click();
+                expect(retryCalled).to.be.true();
+            });
+        });
+
+        describe('点击交互', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+                selector = new TextbookSelector(container);
+                selector.setDebug(false);
+                selector.render(mockTextbooks);
+            });
+
+            afterEach(() => {
+                if (selector) selector.destroy();
+            });
+
+            it('应该在点击卡片时选择教材', () => {
+                const card = container.querySelector('[data-textbook-id="english-pep-3-1"]');
+                card.click();
+                const selected = selector.getSelectedTextbook();
+                expect(selected.id).to.equal('english-pep-3-1');
+            });
+
+            it('应该支持键盘Enter键选择', () => {
+                const card = container.querySelector('[data-textbook-id="english-pep-3-1"]');
+                const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
+                card.dispatchEvent(event);
+                const selected = selector.getSelectedTextbook();
+                expect(selected.id).to.equal('english-pep-3-1');
+            });
+
+            it('应该支持键盘空格键选择', () => {
+                const card = container.querySelector('[data-textbook-id="english-pep-3-1"]');
+                const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true });
+                card.dispatchEvent(event);
+                const selected = selector.getSelectedTextbook();
+                expect(selected.id).to.equal('english-pep-3-1');
+            });
+        });
+
+        describe('无障碍支持', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+                selector = new TextbookSelector(container);
+                selector.setDebug(false);
+                selector.render(mockTextbooks);
+            });
+
+            afterEach(() => {
+                if (selector) selector.destroy();
+            });
+
+            it('应该设置role="listbox"', () => {
+                const grid = container.querySelector('.textbook-grid');
+                expect(grid.getAttribute('role')).to.equal('listbox');
+            });
+
+            it('应该设置aria-label', () => {
+                const grid = container.querySelector('.textbook-grid');
+                expect(grid.getAttribute('aria-label')).to.equal('教材选择');
+            });
+
+            it('应该为每个卡片设置role="option"', () => {
+                const cards = container.querySelectorAll('.card-textbook');
+                cards.forEach((card) => {
+                    expect(card.getAttribute('role')).to.equal('option');
+                });
+            });
+
+            it('应该为每个卡片设置tabindex', () => {
+                const cards = container.querySelectorAll('.card-textbook');
+                cards.forEach((card) => {
+                    expect(card.getAttribute('tabindex')).to.equal('0');
+                });
+            });
+        });
+
+        describe('getTextbooks', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+                selector = new TextbookSelector(container);
+                selector.setDebug(false);
+                selector.render(mockTextbooks);
+            });
+
+            afterEach(() => {
+                if (selector) selector.destroy();
+            });
+
+            it('应该返回教材列表的副本', () => {
+                const textbooks = selector.getTextbooks();
+                expect(textbooks).to.deep.equal(mockTextbooks);
+                // 确保是副本而不是原数组
+                textbooks.push({ id: 'new' });
+                expect(selector.getTextbooks().length).to.equal(3);
+            });
+        });
+
+        describe('destroy', () => {
+            beforeEach(() => {
+                container = document.getElementById('test-container');
+                container.innerHTML = '';
+                selector = new TextbookSelector(container);
+                selector.setDebug(false);
+            });
+
+            it('应该清空容器', () => {
+                selector.render(mockTextbooks);
+                selector.destroy();
+                expect(container.innerHTML).to.equal('');
+            });
+
+            it('应该重置所有状态', () => {
+                selector.render(mockTextbooks);
+                selector.selectTextbook('english-pep-3-1');
+                selector.destroy();
+                expect(selector.getSelectedTextbook()).to.be.null();
+                expect(selector.getTextbooks().length).to.equal(0);
+                expect(selector.getCurrentSubjectId()).to.be.null();
+            });
+        });
+
+        // ========================================
+        // 运行异步测试并渲染结果
+        // ========================================
+        async function runAsyncTests() {
+            // 等待所有异步测试完成
+            await new Promise(resolve => setTimeout(resolve, 500));
+            renderResults();
+        }
+
+        function renderResults() {
+            const container = document.getElementById('testResults');
+            const summaryEl = document.getElementById('summary');
+            
+            // 按测试套件分组
+            const suites = {};
+            testResults.forEach(result => {
+                if (!suites[result.suite]) {
+                    suites[result.suite] = [];
+                }
+                suites[result.suite].push(result);
+            });
+
+            // 渲染每个测试套件
+            let html = '';
+            for (const [suiteName, tests] of Object.entries(suites)) {
+                html += `<div class="test-suite">
+                    <h2>${suiteName}</h2>`;
+                
+                tests.forEach(test => {
+                    const icon = test.pass ? '✅' : '❌';
+                    const className = test.pass ? 'pass' : 'fail';
+                    html += `<div class="test-case ${className}">
+                        <span class="icon">${icon}</span>
+                        <span>${test.name}</span>
+                    </div>`;
+                    if (!test.pass && test.error) {
+                        html += `<div class="error-detail">${test.error}</div>`;
+                    }
+                });
+                
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+
+            // 渲染摘要
+            const passed = testResults.filter(r => r.pass).length;
+            const failed = testResults.filter(r => !r.pass).length;
+            const total = testResults.length;
+            
+            summaryEl.className = `summary ${failed === 0 ? 'all-pass' : 'has-fail'}`;
+            summaryEl.innerHTML = `
+                <strong>测试结果:</strong> ${passed}/${total} 通过
+                ${failed > 0 ? ` | ${failed} 失败` : ' | 全部通过 🎉'}
+            `;
+        }
+
+        // 运行测试
+        runAsyncTests();
+    </script>
+</body>
+</html>

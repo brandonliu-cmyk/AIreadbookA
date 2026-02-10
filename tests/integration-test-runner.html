@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>集成测试 - 模块集成验证</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-suite {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-suite h2 {
+            margin-top: 0;
+            color: #555;
+            font-size: 1.1em;
+        }
+        .test-case {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .test-case.pass {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .test-case.fail {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .test-case .icon {
+            font-size: 1.2em;
+        }
+        .summary {
+            background: #333;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .summary.all-pass {
+            background: #4CAF50;
+        }
+        .summary.has-fail {
+            background: #f44336;
+        }
+        .error-detail {
+            font-size: 0.85em;
+            color: #c62828;
+            margin-left: 30px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔗 集成测试 - 模块集成验证</h1>
+    <p>验证 Task 14.1: 集成所有模块 - Requirements: 1.3, 2.2, 3.3</p>
+    <div id="testResults"></div>
+    <div id="summary" class="summary"></div>
+
+    <!-- 加载所有模块 -->
+    <script src="../js/data/DataManager.js"></script>
+    <script src="../js/data/StorageManager.js"></script>
+    <script src="../js/controllers/AppController.js"></script>
+    <script src="../js/components/SubjectSelector.js"></script>
+    <script src="../js/components/TextbookSelector.js"></script>
+    <script src="../js/components/ChapterNavigator.js"></script>
+    <script src="../js/components/PageRenderer.js"></script>
+    <script src="../js/components/BookFlipper.js"></script>
+    <script src="../js/components/AudioPlayer.js"></script>
+    <script src="../js/components/VoiceSelector.js"></script>
+    <script src="../js/components/ProgressTracker.js"></script>
+    <script src="../js/components/TutorialGuide.js"></script>
+
+    <script>
+        // 简单的测试框架
+        const testResults = [];
+        let currentSuite = '';
+
+        function describe(name, fn) {
+            currentSuite = name;
+            fn();
+        }
+
+        function test(name, fn) {
+            try {
+                fn();
+                testResults.push({ suite: currentSuite, name, pass: true });
+            } catch (error) {
+                testResults.push({ suite: currentSuite, name, pass: false, error: error.message });
+            }
+        }
+
+        async function asyncTest(name, fn) {
+            try {
+                await fn();
+                testResults.push({ suite: currentSuite, name, pass: true });
+            } catch (error) {
+                testResults.push({ suite: currentSuite, name, pass: false, error: error.message });
+            }
+        }
+
+        function expect(actual) {
+            return {
+                toBe(expected) {
+                    if (actual !== expected) {
+                        throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toEqual(expected) {
+                    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                        throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toBeNull() {
+                    if (actual !== null) {
+                        throw new Error(`Expected null, got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toBeTruthy() {
+                    if (!actual) {
+                        throw new Error(`Expected truthy value, got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toBeFalsy() {
+                    if (actual) {
+                        throw new Error(`Expected falsy value, got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toBeDefined() {
+                    if (actual === undefined) {
+                        throw new Error('Expected value to be defined');
+                    }
+                },
+                toBeInstanceOf(cls) {
+                    if (!(actual instanceof cls)) {
+                        throw new Error(`Expected instance of ${cls.name}`);
+                    }
+                },
+                toHaveProperty(prop) {
+                    if (!(prop in actual)) {
+                        throw new Error(`Expected object to have property "${prop}"`);
+                    }
+                }
+            };
+        }
+
+        // ========================================
+        // 集成测试用例
+        // ========================================
+
+        describe('模块加载验证', () => {
+            test('AppController 应该已加载', () => {
+                expect(typeof AppController).toBe('function');
+            });
+
+            test('PageType 枚举应该已定义', () => {
+                expect(PageType).toBeDefined();
+                expect(PageType.HOME).toBe('home');
+                expect(PageType.SUBJECT).toBe('subject');
+                expect(PageType.TEXTBOOK).toBe('textbook');
+                expect(PageType.CHAPTER).toBe('chapter');
+                expect(PageType.READING).toBe('reading');
+                expect(PageType.SETTINGS).toBe('settings');
+            });
+
+            test('DataManager 单例应该已创建', () => {
+                expect(dataManager).toBeDefined();
+                expect(typeof dataManager.getSubjects).toBe('function');
+            });
+
+            test('StorageManager 单例应该已创建', () => {
+                expect(storageManager).toBeDefined();
+                expect(typeof storageManager.getUserPreferences).toBe('function');
+            });
+
+            test('AudioPlayer 单例应该已创建', () => {
+                expect(audioPlayer).toBeDefined();
+                expect(typeof audioPlayer.play).toBe('function');
+            });
+
+            test('ProgressTracker 单例应该已创建', () => {
+                expect(progressTracker).toBeDefined();
+                expect(typeof progressTracker.recordPageVisit).toBe('function');
+            });
+
+            test('SubjectSelector 类应该已加载', () => {
+                expect(typeof SubjectSelector).toBe('function');
+            });
+
+            test('TextbookSelector 类应该已加载', () => {
+                expect(typeof TextbookSelector).toBe('function');
+            });
+
+            test('ChapterNavigator 类应该已加载', () => {
+                expect(typeof ChapterNavigator).toBe('function');
+            });
+
+            test('PageRenderer 类应该已加载', () => {
+                expect(typeof PageRenderer).toBe('function');
+            });
+
+            test('BookFlipper 类应该已加载', () => {
+                expect(typeof BookFlipper).toBe('function');
+            });
+
+            test('VoiceSelector 类应该已加载', () => {
+                expect(typeof VoiceSelector).toBe('function');
+            });
+
+            test('TutorialGuide 类应该已加载', () => {
+                expect(typeof TutorialGuide).toBe('function');
+            });
+        });
+
+        describe('AppController 集成测试', () => {
+            test('AppController 应该能正确初始化', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const state = controller.getCurrentState();
+                expect(state.currentPage).toBe(PageType.HOME);
+            });
+
+            test('AppController 应该支持完整的导航流程', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                // 模拟完整导航流程: 首页 -> 学科 -> 教材 -> 章节 -> 阅读
+                const subject = { id: 'english', name: '英语' };
+                const textbook = { id: 'pep-grade3', name: '人教版三年级' };
+                const lesson = { id: 'unit1-lesson1', name: 'Unit 1 Hello' };
+                
+                // 导航到学科选择
+                controller.navigateTo(PageType.SUBJECT);
+                expect(controller.getCurrentState().currentPage).toBe(PageType.SUBJECT);
+                
+                // 选择学科后导航到教材选择
+                controller.navigateTo(PageType.TEXTBOOK, { subject });
+                expect(controller.getCurrentState().currentPage).toBe(PageType.TEXTBOOK);
+                expect(controller.getCurrentState().selectedSubject).toEqual(subject);
+                
+                // 选择教材后导航到章节导航
+                controller.navigateTo(PageType.CHAPTER, { textbook });
+                expect(controller.getCurrentState().currentPage).toBe(PageType.CHAPTER);
+                expect(controller.getCurrentState().selectedTextbook).toEqual(textbook);
+                
+                // 选择课程后导航到阅读页面
+                controller.navigateTo(PageType.READING, { lesson, pageNumber: 1 });
+                expect(controller.getCurrentState().currentPage).toBe(PageType.READING);
+                expect(controller.getCurrentState().selectedLesson).toEqual(lesson);
+                expect(controller.getCurrentState().currentPageNumber).toBe(1);
+            });
+
+            test('AppController 应该支持返回导航', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                // 导航到阅读页面
+                controller.navigateTo(PageType.READING);
+                expect(controller.getCurrentState().currentPage).toBe(PageType.READING);
+                
+                // 返回到章节页面
+                controller.goBack();
+                expect(controller.getCurrentState().currentPage).toBe(PageType.CHAPTER);
+                
+                // 返回到教材页面
+                controller.goBack();
+                expect(controller.getCurrentState().currentPage).toBe(PageType.TEXTBOOK);
+                
+                // 返回到学科页面
+                controller.goBack();
+                expect(controller.getCurrentState().currentPage).toBe(PageType.SUBJECT);
+                
+                // 返回到首页
+                controller.goBack();
+                expect(controller.getCurrentState().currentPage).toBe(PageType.HOME);
+            });
+
+            test('AppController 状态应该在组件间正确传递', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const subject = { id: 'english', name: '英语' };
+                const textbook = { id: 'pep-grade3', name: '人教版三年级' };
+                const lesson = { id: 'unit1-lesson1', name: 'Unit 1 Hello', totalPages: 5 };
+                const voice = { id: 'voice-female', name: '女声' };
+                
+                // 设置完整状态
+                controller.navigateTo(PageType.READING, {
+                    subject,
+                    textbook,
+                    lesson,
+                    pageNumber: 3
+                });
+                controller.setSelectedVoice(voice);
+                controller.setPlaying(true);
+                
+                // 验证状态
+                const state = controller.getCurrentState();
+                expect(state.selectedSubject).toEqual(subject);
+                expect(state.selectedTextbook).toEqual(textbook);
+                expect(state.selectedLesson).toEqual(lesson);
+                expect(state.currentPageNumber).toBe(3);
+                expect(state.selectedVoice).toEqual(voice);
+                expect(state.isPlaying).toBe(true);
+            });
+        });
+
+        describe('ProgressTracker 集成测试', () => {
+            test('ProgressTracker 应该能设置教材上下文', () => {
+                const tracker = new ProgressTracker(storageManager, dataManager);
+                tracker.setCurrentTextbook('test-textbook-id');
+                expect(tracker.getCurrentTextbookId()).toBe('test-textbook-id');
+            });
+
+            test('ProgressTracker 应该能记录页面访问', () => {
+                const tracker = new ProgressTracker(storageManager, dataManager);
+                tracker.setCurrentTextbook('test-textbook-id');
+                
+                const result = tracker.recordPageVisit('lesson-1', 1);
+                expect(result).toBe(true);
+                
+                const visitedPages = tracker.getVisitedPages('lesson-1');
+                expect(visitedPages).toContain(1);
+            });
+
+            test('ProgressTracker 应该能检测课程完成', () => {
+                const tracker = new ProgressTracker(storageManager, dataManager);
+                tracker.setCurrentTextbook('test-textbook-complete');
+                
+                // 记录课程完成
+                const result = tracker.recordLessonComplete('lesson-complete-test');
+                expect(result).toBe(true);
+                
+                // 验证完成状态
+                const isCompleted = tracker.isLessonCompleted('lesson-complete-test');
+                expect(isCompleted).toBe(true);
+            });
+        });
+
+        describe('组件与 DataManager 集成测试', () => {
+            test('SubjectSelector 应该能使用 DataManager 加载数据', async () => {
+                const container = document.createElement('div');
+                const selector = new SubjectSelector(container);
+                selector.setDataManager(dataManager);
+                
+                const subjects = await selector.loadSubjects();
+                expect(subjects).toBeTruthy();
+                expect(Array.isArray(subjects)).toBe(true);
+            });
+
+            test('TextbookSelector 应该能使用 DataManager 加载数据', async () => {
+                const container = document.createElement('div');
+                const selector = new TextbookSelector(container);
+                selector.setDataManager(dataManager);
+                
+                const textbooks = await selector.loadTextbooks('english');
+                expect(textbooks).toBeTruthy();
+                expect(Array.isArray(textbooks)).toBe(true);
+            });
+
+            test('ChapterNavigator 应该能使用 DataManager 加载数据', async () => {
+                const container = document.createElement('div');
+                const navigator = new ChapterNavigator(container);
+                navigator.setDataManager(dataManager);
+                
+                const chapters = await navigator.loadChapters('pep-english-grade3-1');
+                expect(chapters).toBeTruthy();
+                expect(Array.isArray(chapters)).toBe(true);
+            });
+        });
+
+        describe('Requirements 验证', () => {
+            test('Requirement 1.3: 学科选择后应自动跳转到教材选择', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                let navigationTriggered = false;
+                controller.on('navigation:change', (data) => {
+                    if (data.to === PageType.TEXTBOOK) {
+                        navigationTriggered = true;
+                    }
+                });
+                
+                // 模拟学科选择后的导航
+                controller.navigateTo(PageType.TEXTBOOK, { 
+                    subject: { id: 'english', name: '英语' } 
+                });
+                
+                expect(navigationTriggered).toBe(true);
+                expect(controller.getCurrentState().currentPage).toBe(PageType.TEXTBOOK);
+            });
+
+            test('Requirement 2.2: 教材选择后应记录并加载章节', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const textbook = { id: 'pep-grade3', name: '人教版三年级' };
+                
+                controller.navigateTo(PageType.CHAPTER, { textbook });
+                
+                const state = controller.getCurrentState();
+                expect(state.currentPage).toBe(PageType.CHAPTER);
+                expect(state.selectedTextbook).toEqual(textbook);
+            });
+
+            test('Requirement 3.3: 课程选择后应加载第一页内容', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const lesson = { id: 'unit1-lesson1', name: 'Unit 1 Hello', totalPages: 5 };
+                
+                controller.navigateTo(PageType.READING, { 
+                    lesson, 
+                    pageNumber: 1 
+                });
+                
+                const state = controller.getCurrentState();
+                expect(state.currentPage).toBe(PageType.READING);
+                expect(state.selectedLesson).toEqual(lesson);
+                expect(state.currentPageNumber).toBe(1);
+            });
+        });
+
+        // ========================================
+        // 渲染测试结果
+        // ========================================
+        function renderResults() {
+            const container = document.getElementById('testResults');
+            const summaryEl = document.getElementById('summary');
+            
+            // 按测试套件分组
+            const suites = {};
+            testResults.forEach(result => {
+                if (!suites[result.suite]) {
+                    suites[result.suite] = [];
+                }
+                suites[result.suite].push(result);
+            });
+
+            // 渲染每个测试套件
+            let html = '';
+            for (const [suiteName, tests] of Object.entries(suites)) {
+                html += `<div class="test-suite">
+                    <h2>${suiteName}</h2>`;
+                
+                tests.forEach(test => {
+                    const icon = test.pass ? '✅' : '❌';
+                    const className = test.pass ? 'pass' : 'fail';
+                    html += `<div class="test-case ${className}">
+                        <span class="icon">${icon}</span>
+                        <span>${test.name}</span>
+                    </div>`;
+                    if (!test.pass && test.error) {
+                        html += `<div class="error-detail">${test.error}</div>`;
+                    }
+                });
+                
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+
+            // 渲染摘要
+            const passed = testResults.filter(r => r.pass).length;
+            const failed = testResults.filter(r => !r.pass).length;
+            const total = testResults.length;
+            
+            summaryEl.className = `summary ${failed === 0 ? 'all-pass' : 'has-fail'}`;
+            summaryEl.innerHTML = `
+                <strong>测试结果:</strong> ${passed}/${total} 通过
+                ${failed > 0 ? ` | ${failed} 失败` : ' | 全部通过 🎉'}
+            `;
+        }
+
+        // 运行测试并渲染结果
+        renderResults();
+    </script>
+</body>
+</html>

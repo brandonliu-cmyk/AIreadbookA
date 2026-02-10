@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PageRenderer 单元测试</title>
+    
+    <!-- Jasmine CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/jasmine.css">
+    
+    <!-- 应用样式 -->
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/main.css">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .jasmine_html-reporter {
+            background-color: #f5f5f5;
+        }
+        #test-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 400px;
+            height: 300px;
+            border: 1px solid #ccc;
+            background: white;
+            overflow: auto;
+            z-index: 1000;
+            display: none; /* 隐藏测试容器 */
+        }
+    </style>
+</head>
+<body>
+    <!-- Jasmine 核心库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/jasmine.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/jasmine-html.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/boot0.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/boot1.js"></script>
+    
+    <!-- 被测试的组件 -->
+    <script src="../js/components/PageRenderer.js"></script>
+    
+    <!-- 测试文件 -->
+    <script src="unit/PageRenderer.test.js"></script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookFlipper 组件测试</title>
+    
+    <!-- Jasmine CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/jasmine.css">
+    
+    <!-- 应用样式 -->
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/main.css">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .test-container {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .test-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        #jasmine-container {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">📖 BookFlipper 组件测试</h1>
+        <p>测试翻页控制器的核心功能</p>
+        <ul>
+            <li>Requirements 7.3: 翻页时有流畅的翻页动画效果</li>
+            <li>Requirements 7.6: 显示当前页码和总页数</li>
+        </ul>
+    </div>
+    
+    <div id="jasmine-container"></div>
+    
+    <!-- Jasmine Core -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/jasmine.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/jasmine-html.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/boot0.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/boot1.js"></script>
+    
+    <!-- 被测试的组件 -->
+    <script src="../js/components/BookFlipper.js"></script>
+    
+    <!-- 测试文件 -->
+    <script src="unit/BookFlipper.test.js"></script>
+</body>
+</html>

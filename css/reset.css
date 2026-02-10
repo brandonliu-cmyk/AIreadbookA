@@ -1,0 +1,110 @@
+/**
+ * CSS Reset - 重置浏览器默认样式
+ * AI点读应用 - 面向小学生的游戏化学习应用
+ */
+
+/* Box sizing 规则 */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* 移除默认边距和内边距 */
+* {
+    margin: 0;
+    padding: 0;
+}
+
+/* 防止字体大小调整 */
+html {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* 设置核心根默认值 */
+html:focus-within {
+    scroll-behavior: smooth;
+}
+
+/* 设置核心body默认值 */
+body {
+    min-height: 100vh;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* 移除列表样式 */
+ul,
+ol {
+    list-style: none;
+}
+
+/* 设置图片和媒体元素默认值 */
+img,
+picture,
+video,
+canvas,
+svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+/* 继承表单元素字体 */
+input,
+button,
+textarea,
+select {
+    font: inherit;
+    color: inherit;
+}
+
+/* 移除按钮默认样式 */
+button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 移除链接默认样式 */
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* 移除表格边框间距 */
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+/* 移除文本区域调整大小 */
+textarea {
+    resize: vertical;
+}
+
+/* 隐藏元素的可访问性 */
+[hidden] {
+    display: none !important;
+}
+
+/* 减少动画偏好设置 */
+@media (prefers-reduced-motion: reduce) {
+    html:focus-within {
+        scroll-behavior: auto;
+    }
+    
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

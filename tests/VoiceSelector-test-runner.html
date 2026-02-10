@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceSelector 交互测试</title>
+    <link rel="stylesheet" href="../css/reset.css">
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/main.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #FF6B9D;
+            padding-bottom: 10px;
+        }
+        .test-container {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .test-result.pass {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .test-result.fail {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .test-result.info {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        #voiceSelectorContainer {
+            min-height: 300px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .action-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .action-buttons button:hover {
+            transform: translateY(-2px);
+        }
+        .btn-primary {
+            background: #FF6B9D;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6C63FF;
+            color: white;
+        }
+        .btn-accent {
+            background: #FFB347;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎤 VoiceSelector 交互测试</h1>
+    
+    <div class="test-container">
+        <h2>测试操作</h2>
+        <div class="action-buttons">
+            <button class="btn-primary" onclick="loadVoices()">加载音色列表</button>
+            <button class="btn-secondary" onclick="selectVoice('voice-male')">选择男声</button>
+            <button class="btn-secondary" onclick="selectVoice('voice-female')">选择女声</button>
+            <button class="btn-secondary" onclick="selectVoice('voice-child')">选择童声</button>
+            <button class="btn-accent" onclick="getSelectedVoice()">获取当前选中</button>
+            <button class="btn-accent" onclick="clearSelection()">清除选择</button>
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h2>VoiceSelector 组件</h2>
+        <div id="voiceSelectorContainer">
+            <!-- VoiceSelector 将在此渲染 -->
+            <p style="text-align: center; color: #999;">点击"加载音色列表"开始测试</p>
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h2>测试结果</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <!-- JavaScript 模块 -->
+    <script src="../js/data/DataManager.js"></script>
+    <script src="../js/data/StorageManager.js"></script>
+    <script src="../js/components/AudioPlayer.js"></script>
+    <script src="../js/components/VoiceSelector.js"></script>
+    
+    <script>
+        // 测试结果容器
+        const resultsContainer = document.getElementById('testResults');
+        
+        // VoiceSelector 实例
+        let voiceSelector = null;
+        
+        // 日志函数
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `${new Date().toLocaleTimeString()} - ${message}`;
+            resultsContainer.insertBefore(div, resultsContainer.firstChild);
+        }
+        
+        // 初始化 VoiceSelector
+        function initVoiceSelector() {
+            const container = document.getElementById('voiceSelectorContainer');
+            voiceSelector = new VoiceSelector(container);
+            voiceSelector.setDataManager(dataManager);
+            voiceSelector.setStorageManager(storageManager);
+            voiceSelector.setAudioPlayer(audioPlayer);
+            voiceSelector.setDebug(true);
+            
+            // 设置选择回调
+            voiceSelector.onSelect((voice) => {
+                log(`✅ 音色已选择: ${voice.name} (${voice.id})`, 'pass');
+                
+                // 应用到音频播放器
+                audioPlayer.setVoice(voice.id);
+                log(`🎵 音频播放器音色已更新: ${voice.id}`, 'info');
+            });
+            
+            log('VoiceSelector 初始化完成', 'pass');
+        }
+        
+        // 加载音色列表
+        async function loadVoices() {
+            if (!voiceSelector) {
+                initVoiceSelector();
+            }
+            
+            log('正在加载音色列表...', 'info');
+            
+            try {
+                const voices = await voiceSelector.loadVoices();
+                voiceSelector.render(voices);
+                log(`✅ 音色列表加载成功，共 ${voices.length} 个音色`, 'pass');
+            } catch (error) {
+                log(`❌ 音色列表加载失败: ${error.message}`, 'fail');
+            }
+        }
+        
+        // 选择音色
+        function selectVoice(voiceId) {
+            if (!voiceSelector) {
+                log('❌ 请先加载音色列表', 'fail');
+                return;
+            }
+            
+            log(`正在选择音色: ${voiceId}`, 'info');
+            voiceSelector.selectVoice(voiceId);
+        }
+        
+        // 获取当前选中的音色
+        function getSelectedVoice() {
+            if (!voiceSelector) {
+                log('❌ 请先加载音色列表', 'fail');
+                return;
+            }
+            
+            const voice = voiceSelector.getSelectedVoice();
+            if (voice) {
+                log(`当前选中: ${voice.name} (${voice.id}, ${voice.type})`, 'info');
+            } else {
+                log('当前没有选中的音色', 'info');
+            }
+        }
+        
+        // 清除选择
+        function clearSelection() {
+            if (!voiceSelector) {
+                log('❌ 请先加载音色列表', 'fail');
+                return;
+            }
+            
+            voiceSelector.clearSelection();
+            log('选择已清除', 'info');
+        }
+        
+        // 页面加载完成后初始化
+        log('页面加载完成，准备测试', 'info');
+    </script>
+</body>
+</html>

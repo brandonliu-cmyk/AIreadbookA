@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AppController 测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-suite {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-suite h2 {
+            margin-top: 0;
+            color: #555;
+            font-size: 1.1em;
+        }
+        .test-case {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .test-case.pass {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .test-case.fail {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .test-case .icon {
+            font-size: 1.2em;
+        }
+        .summary {
+            background: #333;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .summary.all-pass {
+            background: #4CAF50;
+        }
+        .summary.has-fail {
+            background: #f44336;
+        }
+        .error-detail {
+            font-size: 0.85em;
+            color: #c62828;
+            margin-left: 30px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 AppController 单元测试</h1>
+    <div id="testResults"></div>
+    <div id="summary" class="summary"></div>
+
+    <script src="../js/controllers/AppController.js"></script>
+    <script>
+        // 简单的测试框架
+        const testResults = [];
+        let currentSuite = '';
+
+        function describe(name, fn) {
+            currentSuite = name;
+            fn();
+        }
+
+        function test(name, fn) {
+            try {
+                fn();
+                testResults.push({ suite: currentSuite, name, pass: true });
+            } catch (error) {
+                testResults.push({ suite: currentSuite, name, pass: false, error: error.message });
+            }
+        }
+
+        function expect(actual) {
+            return {
+                toBe(expected) {
+                    if (actual !== expected) {
+                        throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toEqual(expected) {
+                    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                        throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toBeNull() {
+                    if (actual !== null) {
+                        throw new Error(`Expected null, got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toBeTruthy() {
+                    if (!actual) {
+                        throw new Error(`Expected truthy value, got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toBeFalsy() {
+                    if (actual) {
+                        throw new Error(`Expected falsy value, got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toContain(item) {
+                    if (!actual.includes(item)) {
+                        throw new Error(`Expected array to contain ${JSON.stringify(item)}`);
+                    }
+                },
+                toHaveProperty(prop) {
+                    if (!(prop in actual)) {
+                        throw new Error(`Expected object to have property "${prop}"`);
+                    }
+                },
+                toHaveBeenCalled() {
+                    if (!actual.called) {
+                        throw new Error('Expected function to have been called');
+                    }
+                },
+                toHaveBeenCalledTimes(times) {
+                    if (actual.callCount !== times) {
+                        throw new Error(`Expected ${times} calls, got ${actual.callCount}`);
+                    }
+                },
+                toHaveBeenCalledWith(expected) {
+                    const found = actual.calls.some(call => 
+                        JSON.stringify(call) === JSON.stringify([expected])
+                    );
+                    if (!found) {
+                        throw new Error(`Expected to be called with ${JSON.stringify(expected)}`);
+                    }
+                }
+            };
+        }
+
+        // 简单的 mock 函数
+        function createMock() {
+            const mock = function(...args) {
+                mock.called = true;
+                mock.callCount++;
+                mock.calls.push(args);
+                mock.lastCall = args;
+                if (mock.implementation) {
+                    return mock.implementation(...args);
+                }
+            };
+            mock.called = false;
+            mock.callCount = 0;
+            mock.calls = [];
+            mock.lastCall = null;
+            mock.mockImplementation = (fn) => {
+                mock.implementation = fn;
+                return mock;
+            };
+            return mock;
+        }
+
+        // ========================================
+        // 测试用例
+        // ========================================
+
+        describe('初始化测试', () => {
+            test('应该正确初始化应用状态', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                const state = controller.getCurrentState();
+
+                expect(state.currentPage).toBe(PageType.HOME);
+                expect(state.selectedSubject).toBeNull();
+                expect(state.selectedTextbook).toBeNull();
+                expect(state.selectedLesson).toBeNull();
+                expect(state.currentPageNumber).toBe(1);
+                expect(state.isPlaying).toBe(false);
+                expect(state.isLoading).toBe(false);
+            });
+
+            test('初始化时应该触发 app:initialized 事件', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                const callback = createMock();
+                controller.on('app:initialized', callback);
+                
+                controller.init();
+
+                expect(callback).toHaveBeenCalled();
+            });
+        });
+
+        describe('页面导航测试 (navigateTo)', () => {
+            test('应该正确导航到指定页面', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                controller.navigateTo(PageType.SUBJECT);
+                
+                const state = controller.getCurrentState();
+                expect(state.currentPage).toBe(PageType.SUBJECT);
+            });
+
+            test('导航时应该更新相关状态参数', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const subject = { id: 'english', name: '英语' };
+                controller.navigateTo(PageType.SUBJECT, { subject });
+
+                const state = controller.getCurrentState();
+                expect(state.currentPage).toBe(PageType.SUBJECT);
+                expect(state.selectedSubject).toEqual(subject);
+            });
+
+            test('导航时应该触发 navigation:change 事件', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const callback = createMock();
+                controller.on('navigation:change', callback);
+
+                controller.navigateTo(PageType.TEXTBOOK);
+
+                expect(callback).toHaveBeenCalled();
+            });
+
+            test('应该支持所有有效的页面类型', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const validPages = [
+                    PageType.HOME,
+                    PageType.SUBJECT,
+                    PageType.TEXTBOOK,
+                    PageType.CHAPTER,
+                    PageType.READING,
+                    PageType.SETTINGS
+                ];
+
+                validPages.forEach(page => {
+                    controller.navigateTo(page);
+                    expect(controller.getCurrentState().currentPage).toBe(page);
+                });
+            });
+
+            test('导航参数应该正确传递', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const params = {
+                    subject: { id: 'english' },
+                    textbook: { id: 'pep-grade3' },
+                    lesson: { id: 'unit1-lesson1' },
+                    pageNumber: 5
+                };
+
+                controller.navigateTo(PageType.READING, params);
+
+                const state = controller.getCurrentState();
+                expect(state.selectedSubject).toEqual(params.subject);
+                expect(state.selectedTextbook).toEqual(params.textbook);
+                expect(state.selectedLesson).toEqual(params.lesson);
+                expect(state.currentPageNumber).toBe(5);
+            });
+        });
+
+        describe('返回导航测试 (goBack)', () => {
+            test('从学科页面返回应该到首页', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                controller.navigateTo(PageType.SUBJECT);
+                const result = controller.goBack();
+
+                expect(result).toBe(true);
+                expect(controller.getCurrentState().currentPage).toBe(PageType.HOME);
+            });
+
+            test('从教材页面返回应该到学科页面', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                controller.navigateTo(PageType.TEXTBOOK);
+                controller.goBack();
+
+                expect(controller.getCurrentState().currentPage).toBe(PageType.SUBJECT);
+            });
+
+            test('从首页返回应该返回 false', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const result = controller.goBack();
+
+                expect(result).toBe(false);
+                expect(controller.getCurrentState().currentPage).toBe(PageType.HOME);
+            });
+        });
+
+        describe('状态管理测试 (getCurrentState)', () => {
+            test('应该返回状态的副本而非引用', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const state1 = controller.getCurrentState();
+                const state2 = controller.getCurrentState();
+
+                // 修改 state1 不应影响 state2
+                state1.currentPage = 'modified';
+                expect(state2.currentPage).toBe(PageType.HOME);
+            });
+
+            test('应该包含所有必要的状态字段', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const state = controller.getCurrentState();
+
+                expect(state).toHaveProperty('currentPage');
+                expect(state).toHaveProperty('selectedSubject');
+                expect(state).toHaveProperty('selectedTextbook');
+                expect(state).toHaveProperty('selectedLesson');
+                expect(state).toHaveProperty('currentPageNumber');
+                expect(state).toHaveProperty('selectedVoice');
+                expect(state).toHaveProperty('isPlaying');
+                expect(state).toHaveProperty('isLoading');
+            });
+        });
+
+        describe('事件发布/订阅测试 (on, emit)', () => {
+            test('应该能够注册事件监听器', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const callback = createMock();
+                controller.on('test:event', callback);
+
+                controller.emit('test:event', { data: 'test' });
+
+                expect(callback).toHaveBeenCalled();
+            });
+
+            test('应该支持多个监听器', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const callback1 = createMock();
+                const callback2 = createMock();
+
+                controller.on('multi:event', callback1);
+                controller.on('multi:event', callback2);
+
+                controller.emit('multi:event', 'data');
+
+                expect(callback1).toHaveBeenCalled();
+                expect(callback2).toHaveBeenCalled();
+            });
+
+            test('应该返回取消订阅函数', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const callback = createMock();
+                const unsubscribe = controller.on('unsub:event', callback);
+
+                controller.emit('unsub:event');
+                expect(callback.callCount).toBe(1);
+
+                unsubscribe();
+                controller.emit('unsub:event');
+                expect(callback.callCount).toBe(1); // 仍然是1次
+            });
+
+            test('off 方法应该移除监听器', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const callback = createMock();
+                controller.on('off:event', callback);
+
+                controller.emit('off:event');
+                expect(callback.callCount).toBe(1);
+
+                controller.off('off:event', callback);
+                controller.emit('off:event');
+                expect(callback.callCount).toBe(1);
+            });
+
+            test('once 方法应该只触发一次', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const callback = createMock();
+                controller.once('once:event', callback);
+
+                controller.emit('once:event', 'first');
+                controller.emit('once:event', 'second');
+                controller.emit('once:event', 'third');
+
+                expect(callback.callCount).toBe(1);
+            });
+
+            test('getListenerCount 应该返回正确的监听器数量', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                expect(controller.getListenerCount('count:event')).toBe(0);
+
+                controller.on('count:event', createMock());
+                expect(controller.getListenerCount('count:event')).toBe(1);
+
+                controller.on('count:event', createMock());
+                expect(controller.getListenerCount('count:event')).toBe(2);
+            });
+
+            test('clearAllListeners 应该清除所有监听器', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                controller.on('clear:event1', createMock());
+                controller.on('clear:event2', createMock());
+
+                controller.clearAllListeners();
+
+                expect(controller.getRegisteredEvents().length).toBe(0);
+            });
+        });
+
+        describe('状态更新方法测试', () => {
+            test('setLoading 应该更新加载状态并触发事件', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const callback = createMock();
+                controller.on('loading:change', callback);
+
+                controller.setLoading(true);
+                expect(controller.getCurrentState().isLoading).toBe(true);
+                expect(callback).toHaveBeenCalled();
+            });
+
+            test('setPlaying 应该更新播放状态并触发事件', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const callback = createMock();
+                controller.on('playing:change', callback);
+
+                controller.setPlaying(true);
+                expect(controller.getCurrentState().isPlaying).toBe(true);
+                expect(callback).toHaveBeenCalled();
+            });
+
+            test('setSelectedVoice 应该更新音色并触发事件', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const callback = createMock();
+                controller.on('voice:change', callback);
+
+                const voice = { id: 'female', name: '女声' };
+                controller.setSelectedVoice(voice);
+
+                expect(controller.getCurrentState().selectedVoice).toEqual(voice);
+                expect(callback).toHaveBeenCalled();
+            });
+
+            test('setCurrentPageNumber 应该更新页码并触发事件', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const callback = createMock();
+                controller.on('pageNumber:change', callback);
+
+                controller.setCurrentPageNumber(5);
+
+                expect(controller.getCurrentState().currentPageNumber).toBe(5);
+                expect(callback).toHaveBeenCalled();
+            });
+        });
+
+        describe('重置功能测试', () => {
+            test('reset 应该重置所有状态', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                // 先修改一些状态
+                controller.navigateTo(PageType.READING, {
+                    subject: { id: 'english' },
+                    textbook: { id: 'pep' },
+                    lesson: { id: 'unit1' },
+                    pageNumber: 10
+                });
+                controller.setPlaying(true);
+                controller.setLoading(true);
+
+                // 重置
+                controller.reset();
+
+                const state = controller.getCurrentState();
+                expect(state.currentPage).toBe(PageType.HOME);
+                expect(state.selectedSubject).toBeNull();
+                expect(state.selectedTextbook).toBeNull();
+                expect(state.selectedLesson).toBeNull();
+                expect(state.currentPageNumber).toBe(1);
+                expect(state.isPlaying).toBe(false);
+                expect(state.isLoading).toBe(false);
+            });
+
+            test('reset 应该触发 app:reset 事件', () => {
+                const controller = new AppController();
+                controller.setDebug(false);
+                controller.init();
+                
+                const callback = createMock();
+                controller.on('app:reset', callback);
+
+                controller.reset();
+
+                expect(callback).toHaveBeenCalled();
+            });
+        });
+
+        describe('PageType 枚举测试', () => {
+            test('应该包含所有必要的页面类型', () => {
+                expect(PageType.HOME).toBe('home');
+                expect(PageType.SUBJECT).toBe('subject');
+                expect(PageType.TEXTBOOK).toBe('textbook');
+                expect(PageType.CHAPTER).toBe('chapter');
+                expect(PageType.READING).toBe('reading');
+                expect(PageType.SETTINGS).toBe('settings');
+            });
+
+            test('PageType 应该是不可变的', () => {
+                expect(Object.isFrozen(PageType)).toBe(true);
+            });
+        });
+
+        // ========================================
+        // 渲染测试结果
+        // ========================================
+        function renderResults() {
+            const container = document.getElementById('testResults');
+            const summaryEl = document.getElementById('summary');
+            
+            // 按测试套件分组
+            const suites = {};
+            testResults.forEach(result => {
+                if (!suites[result.suite]) {
+                    suites[result.suite] = [];
+                }
+                suites[result.suite].push(result);
+            });
+
+            // 渲染每个测试套件
+            let html = '';
+            for (const [suiteName, tests] of Object.entries(suites)) {
+                html += `<div class="test-suite">
+                    <h2>${suiteName}</h2>`;
+                
+                tests.forEach(test => {
+                    const icon = test.pass ? '✅' : '❌';
+                    const className = test.pass ? 'pass' : 'fail';
+                    html += `<div class="test-case ${className}">
+                        <span class="icon">${icon}</span>
+                        <span>${test.name}</span>
+                    </div>`;
+                    if (!test.pass && test.error) {
+                        html += `<div class="error-detail">${test.error}</div>`;
+                    }
+                });
+                
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+
+            // 渲染摘要
+            const passed = testResults.filter(r => r.pass).length;
+            const failed = testResults.filter(r => !r.pass).length;
+            const total = testResults.length;
+            
+            summaryEl.className = `summary ${failed === 0 ? 'all-pass' : 'has-fail'}`;
+            summaryEl.innerHTML = `
+                <strong>测试结果:</strong> ${passed}/${total} 通过
+                ${failed > 0 ? ` | ${failed} 失败` : ' | 全部通过 🎉'}
+            `;
+        }
+
+        // 运行测试并渲染结果
+        renderResults();
+    </script>
+</body>
+</html>

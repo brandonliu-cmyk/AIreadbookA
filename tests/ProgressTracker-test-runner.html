@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProgressTracker 单元测试</title>
+    
+    <!-- Jasmine CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/jasmine.css">
+    
+    <!-- Jasmine JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/jasmine.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/jasmine-html.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/boot0.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jasmine/4.6.0/boot1.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .jasmine_html-reporter {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载被测试的组件 -->
+    <script src="../js/data/StorageManager.js"></script>
+    <script src="../js/data/DataManager.js"></script>
+    <script src="../js/components/ProgressTracker.js"></script>
+    
+    <!-- 加载测试文件 -->
+    <script src="unit/ProgressTracker.test.js"></script>
+</body>
+</html>
