@@ -61,6 +61,10 @@ class DigitalAvatar {
                     <span class="action-icon">📝</span>
                     <span class="action-label">背诵</span>
                 </button>
+                <button class="avatar-action-btn" data-action="fullRecite" title="全文背诵">
+                    <span class="action-icon">📖</span>
+                    <span class="action-label">全文背诵</span>
+                </button>
             </div>
         `;
         this._container.appendChild(wrapper);
@@ -72,6 +76,9 @@ class DigitalAvatar {
         this._statusIcon = wrapper.querySelector('.status-icon');
         this._statusText = wrapper.querySelector('.status-text');
         this._actionsEl = wrapper.querySelector('#avatarActions');
+
+        // 创建暂停按钮并插入底部页码栏右侧
+        this._pauseBtnEl = this._createPauseButton();
 
         this._bindButtonEvents();
         this._addStyles();
@@ -87,6 +94,28 @@ class DigitalAvatar {
                 this._handleAction(action, btn);
             });
         });
+        // 绑定暂停按钮事件
+        if (this._pauseBtnEl) {
+            this._pauseBtnEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this._handleAction('pause', this._pauseBtnEl);
+            });
+        }
+    }
+
+    // 创建暂停/继续按钮并插入底部页码栏
+    _createPauseButton() {
+        const pageIndicator = document.querySelector('.book-flipper-page-indicator');
+        if (!pageIndicator) return null;
+
+        const btn = document.createElement('button');
+        btn.className = 'pause-play-btn hidden';
+        btn.id = 'avatarPauseBtn';
+        btn.title = '暂停';
+        btn.setAttribute('aria-label', '暂停播放');
+        btn.innerHTML = '<span class="pause-play-icon">⏸️</span>';
+        pageIndicator.appendChild(btn);
+        return btn;
     }
 
     _handleAction(action, btn) {
@@ -94,6 +123,12 @@ class DigitalAvatar {
             case 'repeat':
                 this._log('复读');
                 if (this._onRepeat) this._onRepeat();
+                break;
+            case 'pause':
+                this._isPaused = !this._isPaused;
+                this._updatePauseButton();
+                this._log('暂停/继续:', this._isPaused);
+                if (this._onPause) this._onPause(this._isPaused);
                 break;
             case 'continuous':
                 this._continuousMode = !this._continuousMode;
@@ -109,6 +144,10 @@ class DigitalAvatar {
                 this._log('背诵');
                 if (this._onRecite) this._onRecite();
                 break;
+            case 'fullRecite':
+                this._log('全文背诵');
+                if (this._onFullRecite) this._onFullRecite();
+                break;
         }
     }
 
@@ -117,6 +156,43 @@ class DigitalAvatar {
     onContinuous(cb) { this._onContinuous = cb; }
     onAssess(cb) { this._onAssess = cb; }
     onRecite(cb) { this._onRecite = cb; }
+    onFullRecite(cb) { this._onFullRecite = cb; }
+    onPause(cb) { this._onPause = cb; }
+
+    // 显示暂停按钮（音频开始播放时调用）
+    showPauseButton() {
+        this._isPaused = false;
+        this._updatePauseButton();
+        if (this._pauseBtnEl) {
+            this._pauseBtnEl.classList.remove('hidden');
+        }
+    }
+
+    // 隐藏暂停按钮（音频播放结束/停止时调用）
+    hidePauseButton() {
+        this._isPaused = false;
+        this._updatePauseButton();
+        if (this._pauseBtnEl) {
+            this._pauseBtnEl.classList.add('hidden');
+        }
+    }
+
+    // 更新暂停按钮的图标和文字
+    _updatePauseButton() {
+        if (!this._pauseBtnEl) return;
+        const icon = this._pauseBtnEl.querySelector('.pause-play-icon');
+        if (this._isPaused) {
+            icon.textContent = '▶️';
+            this._pauseBtnEl.title = '继续播放';
+            this._pauseBtnEl.setAttribute('aria-label', '继续播放');
+            this._pauseBtnEl.classList.add('paused');
+        } else {
+            icon.textContent = '⏸️';
+            this._pauseBtnEl.title = '暂停播放';
+            this._pauseBtnEl.setAttribute('aria-label', '暂停播放');
+            this._pauseBtnEl.classList.remove('paused');
+        }
+    }
 
     // ========== 说话动画 ==========
     startSpeaking(text) {
@@ -165,9 +241,11 @@ class DigitalAvatar {
     setDebug(enabled) { this._debug = enabled; }
 
     destroy() {
-        this.stopSpeaking();
-        if (this._wrapperEl) this._wrapperEl.remove();
-    }
+            this.stopSpeaking();
+            if (this._pauseBtnEl) this._pauseBtnEl.remove();
+            if (this._wrapperEl) this._wrapperEl.remove();
+        }
+
 
     _log(...args) {
         if (this._debug) console.log('[DigitalAvatar]', ...args);
@@ -234,6 +312,52 @@ class DigitalAvatar {
 
             .avatar-action-btn.active .action-label {
                 color: white;
+            }
+
+            /* 底部栏暂停/继续按钮 */
+            .pause-play-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+                border: none;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #4DD0E1, #26C6DA);
+                color: white;
+                cursor: pointer;
+                transition: all 0.25s cubic-bezier(0.175,0.885,0.32,1.275);
+                box-shadow: 0 3px 12px rgba(77,208,225,0.35);
+                margin-left: 4px;
+                animation: pause-btn-pop 0.3s ease;
+            }
+
+            .pause-play-btn:hover {
+                transform: scale(1.12);
+                box-shadow: 0 4px 16px rgba(77,208,225,0.5);
+            }
+
+            .pause-play-btn:active {
+                transform: scale(0.92);
+            }
+
+            .pause-play-btn.paused {
+                background: linear-gradient(135deg, #66BB6A, #43A047);
+                box-shadow: 0 3px 12px rgba(76,175,80,0.35);
+            }
+
+            .pause-play-btn.hidden {
+                display: none;
+            }
+
+            .pause-play-icon {
+                font-size: 20px;
+                line-height: 1;
+            }
+
+            @keyframes pause-btn-pop {
+                from { opacity: 0; transform: scale(0.5); }
+                to { opacity: 1; transform: scale(1); }
             }
 
             .avatar-action-btn.recording {
@@ -406,7 +530,9 @@ class DigitalAvatar {
                 border-radius: 20px;
                 padding: 24px;
                 min-width: 300px;
-                max-width: 400px;
+                max-width: min(90vw, 560px);
+                max-height: 85vh;
+                overflow-y: auto;
                 box-shadow: 0 10px 40px rgba(0,0,0,0.2);
                 z-index: 200;
                 text-align: center;

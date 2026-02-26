@@ -2267,6 +2267,32 @@ async function renderReadingPage() {
         }
         startRecitation(lastClickedElement);
     });
+
+    // 全文背诵：遮挡整个课本区域后录音
+    digitalAvatar.onFullRecite(() => {
+        startFullRecitation();
+    });
+
+    // 暂停/继续：暂停或继续当前音频播放
+    digitalAvatar.onPause((isPaused) => {
+        if (isPaused) {
+            audioPlayer.pause();
+            if (appController) appController.setPlaying(false);
+            if (digitalAvatar) digitalAvatar.stopSpeaking();
+            digitalAvatar.setStatus('⏸️', '已暂停，点击继续');
+            showToast('已暂停播放', 'info', 1500);
+        } else {
+            audioPlayer.resume().then(() => {
+                if (appController) appController.setPlaying(true);
+                if (digitalAvatar) digitalAvatar.startSpeaking('继续朗读中...');
+                showToast('继续播放', 'info', 1500);
+            }).catch((err) => {
+                console.error('继续播放失败:', err);
+                showToast('继续播放失败', 'error', 2000);
+                digitalAvatar.hidePauseButton();
+            });
+        }
+    });
 }
 
 /**
@@ -2763,7 +2789,7 @@ function handleClickableElementClick(element, elementId, audioId, elementType, d
     
     // Requirements: 5.3 - 点击新的可点读内容时，停止当前朗读并开始新内容的朗读
     // 如果正在播放其他音频，先停止
-    if (audioPlayer.isPlaying()) {
+    if (audioPlayer.isPlaying() || audioPlayer.isPaused()) {
         if (APP_CONFIG.debug) {
             console.log('🔊 停止当前播放，切换到新内容');
         }
@@ -2771,6 +2797,10 @@ function handleClickableElementClick(element, elementId, audioId, elementType, d
         // 清除之前的高亮
         if (pageRenderer) {
             pageRenderer.clearHighlight();
+        }
+        // 隐藏暂停按钮
+        if (digitalAvatar) {
+            digitalAvatar.hidePauseButton();
         }
         // 停止数字人动画
         if (digitalAvatar) {
@@ -2819,6 +2849,10 @@ function handleClickableElementClick(element, elementId, audioId, elementType, d
         if (appController) {
             appController.setPlaying(false);
         }
+        // 隐藏暂停按钮
+        if (digitalAvatar) {
+            digitalAvatar.hidePauseButton();
+        }
         // 重置重试计数
         resetAudioRetryCount(audioId);
         
@@ -2852,6 +2886,10 @@ function handleClickableElementClick(element, elementId, audioId, elementType, d
         // 更新播放状态
         if (appController) {
             appController.setPlaying(false);
+        }
+        // 隐藏暂停按钮
+        if (digitalAvatar) {
+            digitalAvatar.hidePauseButton();
         }
         // 处理音频错误并显示重试选项
         handleAudioError(error, element, elementId, audioId, elementType, voiceId);
@@ -2932,6 +2970,10 @@ function playAudioWithRetry(audioUrl, element, elementId, audioId, elementType, 
             // 更新播放状态
             if (appController) {
                 appController.setPlaying(true);
+            }
+            // 显示暂停按钮
+            if (digitalAvatar) {
+                digitalAvatar.showPauseButton();
             }
             // 播放成功，重置重试计数
             resetAudioRetryCount(audioId);
@@ -4200,6 +4242,12 @@ function showMockRecordingUI(seconds, mode, onComplete) {
     // 移除已有弹窗
     document.querySelectorAll('.mock-record-overlay, .mock-record-popup').forEach(el => el.remove());
 
+    const MAX_RECORD_SECONDS = 60;
+    let countdownTimer = null;
+    let recordTimer = null;
+    let recordElapsed = 0;
+    let finished = false;
+
     const overlay = document.createElement('div');
     overlay.className = 'mock-record-overlay';
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
@@ -4207,15 +4255,6 @@ function showMockRecordingUI(seconds, mode, onComplete) {
     const popup = document.createElement('div');
     popup.className = 'mock-record-popup';
     popup.style.cssText = 'background:#fff;border-radius:20px;padding:40px 50px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.2);min-width:280px;';
-
-    popup.innerHTML = `
-        <div style="font-size:20px;font-weight:bold;color:#333;margin-bottom:16px;">🎤 ${mode}录音中</div>
-        <div class="mock-wave-container" style="display:flex;align-items:center;justify-content:center;gap:4px;height:50px;margin-bottom:16px;">
-            ${Array.from({length: 12}, (_, i) => `<div class="mock-wave-bar" style="width:4px;border-radius:2px;background:linear-gradient(180deg,#FF7043,#FF5722);animation:mockWaveAnim 0.6s ease-in-out ${i * 0.08}s infinite alternate;"></div>`).join('')}
-        </div>
-        <div class="mock-countdown" style="font-size:48px;font-weight:bold;color:#FF5722;margin-bottom:8px;">${seconds}</div>
-        <div style="font-size:14px;color:#999;">请对着麦克风朗读...</div>
-    `;
 
     // 添加波形动画样式
     if (!document.getElementById('mock-wave-style')) {
@@ -4226,34 +4265,119 @@ function showMockRecordingUI(seconds, mode, onComplete) {
                 from { height: 8px; }
                 to { height: 40px; }
             }
+            @keyframes countdownPop {
+                0% { transform: scale(0.3); opacity: 0; }
+                50% { transform: scale(1.2); }
+                100% { transform: scale(1); opacity: 1; }
+            }
         `;
         document.head.appendChild(style);
     }
 
+    // ===== 阶段1：倒计时准备 =====
+    popup.innerHTML = `
+        <div style="font-size:18px;font-weight:bold;color:#666;margin-bottom:20px;">🎤 ${mode}准备</div>
+        <div class="countdown-number" style="font-size:80px;font-weight:900;color:#FF5722;line-height:1;margin-bottom:16px;animation:countdownPop 0.4s ease;">3</div>
+        <div style="font-size:14px;color:#999;">即将开始录音...</div>
+    `;
     overlay.appendChild(popup);
     document.body.appendChild(overlay);
 
-    // 倒计时
-    let remaining = seconds;
-    const countdownEl = popup.querySelector('.mock-countdown');
-    const timer = setInterval(() => {
-        remaining--;
-        if (remaining > 0) {
-            countdownEl.textContent = remaining;
-        } else {
-            clearInterval(timer);
-            countdownEl.textContent = '✓';
-            countdownEl.style.color = '#4CAF50';
-            popup.querySelector('div').textContent = '✅ 录音完成';
+    let countdownRemaining = 3;
+    const countdownNumEl = popup.querySelector('.countdown-number');
 
-            // 短暂显示完成状态后关闭
-            setTimeout(() => {
-                overlay.remove();
-                if (onComplete) onComplete();
-            }, 600);
+    countdownTimer = setInterval(() => {
+        countdownRemaining--;
+        if (countdownRemaining > 0) {
+            countdownNumEl.textContent = countdownRemaining;
+            countdownNumEl.style.animation = 'none';
+            // 触发 reflow 重新播放动画
+            void countdownNumEl.offsetWidth;
+            countdownNumEl.style.animation = 'countdownPop 0.4s ease';
+        } else {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+            startRecordingPhase();
         }
     }, 1000);
+
+    // ===== 阶段2：正式录音 =====
+    function startRecordingPhase() {
+        const waveBars = Array.from({length: 12}, (_, i) =>
+            `<div class="mock-wave-bar" style="width:4px;border-radius:2px;background:linear-gradient(180deg,#FF7043,#FF5722);animation:mockWaveAnim 0.6s ease-in-out ${i * 0.08}s infinite alternate;"></div>`
+        ).join('');
+
+        popup.innerHTML = `
+            <div style="font-size:20px;font-weight:bold;color:#333;margin-bottom:16px;">🎤 ${mode}录音中</div>
+            <div class="mock-wave-container" style="display:flex;align-items:center;justify-content:center;gap:4px;height:50px;margin-bottom:16px;">
+                ${waveBars}
+            </div>
+            <div class="mock-record-timer" style="font-size:36px;font-weight:bold;color:#FF5722;margin-bottom:4px;">00:00</div>
+            <div class="mock-record-limit" style="font-size:12px;color:#bbb;margin-bottom:16px;">最长 ${MAX_RECORD_SECONDS} 秒</div>
+            <button class="mock-stop-btn" style="
+                padding:12px 36px;border:none;border-radius:24px;
+                background:linear-gradient(135deg,#EF5350,#E53935);color:#fff;
+                font-size:16px;font-weight:bold;cursor:pointer;
+                box-shadow:0 4px 14px rgba(229,57,53,0.3);
+                transition:transform 0.2s,box-shadow 0.2s;
+            ">⏹ 结束录音</button>
+        `;
+
+        const timerEl = popup.querySelector('.mock-record-timer');
+        const stopBtn = popup.querySelector('.mock-stop-btn');
+
+        stopBtn.addEventListener('mouseenter', () => {
+            stopBtn.style.transform = 'scale(1.05)';
+            stopBtn.style.boxShadow = '0 6px 20px rgba(229,57,53,0.45)';
+        });
+        stopBtn.addEventListener('mouseleave', () => {
+            stopBtn.style.transform = 'scale(1)';
+            stopBtn.style.boxShadow = '0 4px 14px rgba(229,57,53,0.3)';
+        });
+
+        // 点击结束录音
+        stopBtn.addEventListener('click', () => finishRecording());
+
+        // 录音计时
+        recordElapsed = 0;
+        recordTimer = setInterval(() => {
+            recordElapsed++;
+            const mins = String(Math.floor(recordElapsed / 60)).padStart(2, '0');
+            const secs = String(recordElapsed % 60).padStart(2, '0');
+            timerEl.textContent = `${mins}:${secs}`;
+
+            // 最后10秒变色提醒
+            if (recordElapsed >= MAX_RECORD_SECONDS - 10) {
+                timerEl.style.color = '#F44336';
+            }
+
+            // 到达最大时长自动结束
+            if (recordElapsed >= MAX_RECORD_SECONDS) {
+                finishRecording();
+            }
+        }, 1000);
+    }
+
+    // ===== 结束录音 =====
+    function finishRecording() {
+        if (finished) return;
+        finished = true;
+        if (countdownTimer) clearInterval(countdownTimer);
+        if (recordTimer) clearInterval(recordTimer);
+
+        // 显示完成状态
+        popup.innerHTML = `
+            <div style="font-size:20px;font-weight:bold;color:#4CAF50;margin-bottom:12px;">✅ 录音完成</div>
+            <div style="font-size:48px;font-weight:bold;color:#4CAF50;">✓</div>
+        `;
+
+        setTimeout(() => {
+            overlay.remove();
+            if (onComplete) onComplete();
+        }, 600);
+    }
 }
+
 
 /**
  * 开始评测：录音后与原文对比评分
@@ -4346,6 +4470,108 @@ function startRecitation(clickedInfo) {
         const score = generateRandomScore();
         showAssessResult(targetText, mockSpoken, score, '背诵', clickedInfo);
     });
+}
+
+/**
+ * 全文背诵：遮挡整个课本内容区域，录音后评分
+ */
+function startFullRecitation() {
+    // 收集当前页面所有可点读元素的文本
+    if (currentPageElements.length === 0) {
+        showToast('当前页面没有可背诵的内容', 'info');
+        return;
+    }
+
+    const allTexts = currentPageElements
+        .map(el => el.content || '')
+        .filter(t => t.trim())
+        .join('\n');
+
+    if (!allTexts.trim()) {
+        showToast('当前页面没有可背诵的文本', 'info');
+        return;
+    }
+
+    // 如果正在播放音频，先停止
+    if (audioPlayer && (audioPlayer.isPlaying() || audioPlayer.isPaused())) {
+        audioPlayer.stop();
+        if (pageRenderer) pageRenderer.clearHighlight();
+        if (digitalAvatar) {
+            digitalAvatar.hidePauseButton();
+            digitalAvatar.stopSpeaking();
+        }
+    }
+
+    // 在课本内容区域覆盖全文遮罩
+    const contentArea = document.querySelector('.book-flipper-content');
+    if (!contentArea) {
+        showToast('找不到课本内容区域', 'error');
+        return;
+    }
+
+    addFullReciteMaskStyle();
+    contentArea.classList.add('full-recite-masked');
+
+    const maskedPreview = maskText(allTexts.substring(0, 30));
+    showToast('📖 全文已遮挡，请背诵全部内容...', 'info', 3000);
+
+    if (digitalAvatar) {
+        digitalAvatar.setRecording(true, '全文背诵: ' + maskedPreview);
+    }
+
+    // 构造一个虚拟的 clickedInfo 用于结果弹窗的重新背诵
+    const fullReciteInfo = {
+        element: { content: allTexts },
+        elementId: '__full_recite__',
+        audioId: currentPageElements[0] ? currentPageElements[0].audioId : null,
+        elementType: 'text',
+        audioUrl: currentPageElements[0] ? currentPageElements[0].audioUrl : null
+    };
+
+    showMockRecordingUI(3, '全文背诵', () => {
+        if (digitalAvatar) digitalAvatar.setRecording(false);
+        contentArea.classList.remove('full-recite-masked');
+
+        const mockSpoken = allTexts;
+        const score = generateRandomScore();
+        showAssessResult(allTexts, mockSpoken, score, '全文背诵', fullReciteInfo);
+    });
+}
+
+/**
+ * 添加全文背诵遮罩样式
+ */
+function addFullReciteMaskStyle() {
+    if (document.getElementById('full-recite-mask-style')) return;
+    const style = document.createElement('style');
+    style.id = 'full-recite-mask-style';
+    style.textContent = `
+        .book-flipper-content.full-recite-masked {
+            position: relative;
+        }
+        .book-flipper-content.full-recite-masked::after {
+            content: '📖 全文背诵中...请凭记忆背诵';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #FFE082 0%, #FFD54F 50%, #FFCA28 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #5D4037;
+            z-index: 10;
+            animation: full-mask-breathe 2s ease-in-out infinite;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            letter-spacing: 1px;
+        }
+        @keyframes full-mask-breathe {
+            0%, 100% { opacity: 0.92; }
+            50% { opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 /**

@@ -3211,45 +3211,58 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    border: none;
-    border-radius: var(--radius-full);
-    background: var(--gradient-primary);
-    color: var(--color-text-inverse);
+    gap: 2px;
+    height: 40px;
+    padding: 0 12px;
+    border: 2px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
     cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-bounce);
-    box-shadow: var(--shadow-primary);
+    transition: all var(--duration-fast) var(--ease-out);
+    box-shadow: var(--shadow-sm);
     outline: none;
 }
 
 .page-nav-btn:hover:not(.disabled) {
-    transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(255, 107, 157, 0.4);
+    border-color: var(--color-primary-light);
+    background: var(--color-primary-bg);
+    color: var(--color-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
 }
 
 .page-nav-btn:active:not(.disabled) {
-    transform: scale(0.95);
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
 }
 
 .page-nav-btn.disabled {
-    opacity: 0.4;
+    opacity: 0.35;
     cursor: not-allowed;
     background: var(--color-bg-tertiary);
+    border-color: transparent;
     box-shadow: none;
 }
 
 .page-nav-btn .nav-icon {
-    font-size: var(--font-size-md);
+    font-size: 16px;
+    line-height: 1;
+}
+
+.page-nav-btn .nav-arrow {
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 1;
     transition: transform var(--duration-fast) var(--ease-out);
 }
 
-.page-nav-prev:hover:not(.disabled) .nav-icon {
-    transform: translateX(-2px);
+.page-nav-prev:hover:not(.disabled) .nav-arrow {
+    transform: translateX(-3px);
 }
 
-.page-nav-next:hover:not(.disabled) .nav-icon {
-    transform: translateX(2px);
+.page-nav-next:hover:not(.disabled) .nav-arrow {
+    transform: translateX(3px);
 }
 
 /* ========================================
@@ -3325,8 +3338,8 @@ body {
     }
     
     .page-nav-btn {
-        width: 36px;
-        height: 36px;
+        height: 34px;
+        padding: 0 8px;
     }
     
     .page-indicator-display {
@@ -3369,8 +3382,8 @@ body {
     }
     
     .page-nav-btn {
-        width: 52px;
-        height: 52px;
+        height: 46px;
+        padding: 0 16px;
     }
     
     .page-indicator-display {
