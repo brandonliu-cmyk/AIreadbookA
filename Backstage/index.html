@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI点读 - 后台管理系统</title>
+    <link rel="stylesheet" href="css/backstage.css">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <div class="header-left">
+            <span class="logo">📚 AI点读 · 后台管理</span>
+        </div>
+        <div class="header-right">
+            <span class="user-info">管理员</span>
+        </div>
+    </header>
+
+    <div class="layout">
+        <!-- 左侧边栏：教材章节选择 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>教材选择</h3>
+            </div>
+            <div class="sidebar-section">
+                <label class="form-label">学科</label>
+                <select id="subjectSelect" class="form-select">
+                    <option value="">请选择学科</option>
+                    <option value="chinese">语文</option>
+                    <option value="english">英语</option>
+                </select>
+            </div>
+            <div class="sidebar-section">
+                <label class="form-label">教材</label>
+                <select id="publisherSelect" class="form-select" disabled>
+                    <option value="">请先选择学科</option>
+                </select>
+            </div>
+            <div class="sidebar-section">
+                <label class="form-label">课本</label>
+                <select id="textbookSelect" class="form-select" disabled>
+                    <option value="">请先选择教材</option>
+                </select>
+            </div>
+            <div class="sidebar-section sidebar-section-fill">
+                <label class="form-label">章节</label>
+                <div id="chapterList" class="chapter-list">
+                    <p class="placeholder-text">请先选择课本</p>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 工具栏 -->
+            <div class="toolbar" id="toolbar">
+                <div class="toolbar-left">
+                    <button class="btn-tool active" id="btnSelect" title="选择工具">
+                        <span>🖱️</span> 选择
+                    </button>
+                    <button class="btn-tool" id="btnAddZone" title="添加热区">
+                        <span>➕</span> 添加热区
+                    </button>
+                    <button class="btn-tool" id="btnAutoDetect" title="自动识别热区">
+                        <span>🤖</span> 自动识别热区
+                    </button>
+                    <div class="toolbar-divider"></div>
+                </div>
+                <div class="toolbar-right">
+                    <button class="btn-tool btn-primary" id="btnOCRAll" title="开始识别文字">
+                        <span>�</span> 开始识别文字
+                    </button>
+                    <button class="btn-tool btn-primary" id="btnGenerateAudio" title="生成音频">
+                        <span>�</span> 生成音频
+                    </button>
+                    <button class="btn-tool btn-primary" id="btnSaveAll" title="保存全部">
+                        <span>�</span> 保存全部
+                    </button>
+                </div>
+            </div>
+
+            <!-- 编辑区域 -->
+            <div class="editor-area" id="editorArea">
+                <!-- 空状态 -->
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">📖</div>
+                    <h2>请选择教材章节</h2>
+                    <p>从左侧选择学科、教材和章节，加载课本页面后开始编辑热区</p>
+                </div>
+                <!-- 画布容器 -->
+                <div class="canvas-container hidden" id="canvasContainer">
+                    <div class="canvas-wrapper" id="canvasWrapper">
+                        <img id="pageImage" class="page-image" alt="课本页面">
+                        <svg id="hotzoneSvg" class="hotzone-svg"></svg>
+                        <!-- 绘制中的临时矩形 -->
+                        <div id="drawingRect" class="drawing-rect hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部翻页栏 -->
+            <div class="page-bar">
+                <button id="prevPage" class="btn-page" disabled>‹</button>
+                <span id="pageInfo" class="page-info">- / -</span>
+                <button id="nextPage" class="btn-page" disabled>›</button>
+            </div>
+
+            <!-- 底部状态栏 -->
+            <div class="statusbar">
+                <span id="statusText">就绪</span>
+                <span id="zoneCount">热区: 0</span>
+            </div>
+        </main>
+
+        <!-- 右侧面板：热区详情 -->
+        <aside class="panel-right" id="panelRight">
+            <div class="panel-header">
+                <h3>热区详情</h3>
+            </div>
+
+            <!-- 无选中状态 -->
+            <div class="panel-empty" id="panelEmpty">
+                <p>点击画布上的热区查看详情</p>
+            </div>
+
+            <!-- 热区编辑表单 -->
+            <div class="panel-form hidden" id="panelForm">
+                <div class="form-group">
+                    <label class="form-label">编号</label>
+                    <input type="text" id="zoneId" class="form-input" readonly disabled style="background:var(--bg);color:var(--text-muted);cursor:not-allowed;">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">位置信息</label>
+                    <div class="position-grid">
+                        <div class="pos-item">
+                            <label>X</label>
+                            <input type="number" id="zonePosX" class="form-input-sm" step="0.1">
+                        </div>
+                        <div class="pos-item">
+                            <label>Y</label>
+                            <input type="number" id="zonePosY" class="form-input-sm" step="0.1">
+                        </div>
+                        <div class="pos-item">
+                            <label>宽</label>
+                            <input type="number" id="zonePosW" class="form-input-sm" step="0.1">
+                        </div>
+                        <div class="pos-item">
+                            <label>高</label>
+                            <input type="number" id="zonePosH" class="form-input-sm" step="0.1">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                        <label class="form-label" style="margin-bottom:0;">文字内容</label>
+                        <div>
+                            <button class="btn-sm" id="btnEditContent">✏️ 编辑</button>
+                            <button class="btn-sm btn-sm-primary hidden" id="btnSaveContent">💾 保存</button>
+                        </div>
+                    </div>
+                    <textarea id="zoneContent" class="form-textarea" rows="6" placeholder="输入或识别文字内容" readonly disabled style="background:var(--bg);color:var(--text-secondary);cursor:not-allowed;"></textarea>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- 音频管理 -->
+                <div class="audio-section">
+                    <h4>音频管理</h4>
+                    <div class="audio-list" id="audioList">
+                        <!-- 音频项将动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 热区列表 -->
+            <div class="panel-section">
+                <h4 class="section-title">
+                    全部热区
+                    <span class="badge" id="totalZoneBadge">0</span>
+                </h4>
+                <div class="zone-list" id="zoneList">
+                    <p class="placeholder-text">暂无热区</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- 音频生成进度弹窗 -->
+    <div class="modal-overlay hidden" id="audioModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🔊 音频生成</h3>
+                <button class="btn-close" id="btnCloseAudioModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="voice-options">
+                    <h4>选择音色</h4>
+                    <div class="voice-checkboxes" id="voiceCheckboxes">
+                        <label class="voice-check">
+                            <input type="checkbox" value="male" checked> 标准男声
+                        </label>
+                        <label class="voice-check">
+                            <input type="checkbox" value="female" checked> 甜美女声
+                        </label>
+                        <label class="voice-check">
+                            <input type="checkbox" value="child" checked> 可爱童声
+                        </label>
+                    </div>
+                </div>
+                <div class="progress-section hidden" id="progressSection">
+                    <div class="progress-info">
+                        <span id="progressText">正在生成...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-detail" id="progressDetail"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btnCancelAudio">取消</button>
+                <button class="btn btn-primary" id="btnStartGenerate">开始生成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/data.js"></script>
+    <script src="js/hotzone-editor.js"></script>
+    <script src="js/audio-manager.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
