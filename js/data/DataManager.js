@@ -1419,26 +1419,17 @@ class DataManager {
         this._voices = [
             {
                 id: 'voice-male',
-                name: '标准男声',
+                name: '男声',
                 type: 'male',
                 previewAudioUrl: 'assets/audio/preview-male.mp3',
-                description: '清晰标准的男性声音，适合各科目朗读'
+                description: '清晰标准的男性声音'
             },
             {
                 id: 'voice-female',
-                name: '甜美女声',
+                name: '女声',
                 type: 'female',
                 previewAudioUrl: 'assets/audio/preview-female.mp3',
-                description: '温柔甜美的女性声音，适合英语和语文朗读',
-                disabled: true
-            },
-            {
-                id: 'voice-child',
-                name: '可爱童声',
-                type: 'child',
-                previewAudioUrl: 'assets/audio/preview-child.mp3',
-                description: '活泼可爱的儿童声音，让学习更有趣',
-                disabled: true
+                description: '温柔自然的女性声音'
             }
         ];
     }

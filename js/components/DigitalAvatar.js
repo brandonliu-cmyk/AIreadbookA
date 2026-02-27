@@ -1,100 +1,74 @@
 /**
- * DigitalAvatar - 数字人形象组件
- * 在点读界面右侧显示数字人，播放音频时展示说话动画
- * 包含复读、连读、评测、背诵4个功能按钮
+ * DigitalAvatar - 底部工具栏组件（重构版）
+ * 将功能按钮合并到底部固定栏（page-indicator），分区布局：
+ * [上一页] [页码] [下一页] | [复读][连读][评测][背诵][全文背诵][音色] | [暂停]
  */
 class DigitalAvatar {
     constructor(container) {
         this._container = container;
         this._isAnimating = false;
-        this._avatarEl = null;
         this._debug = false;
+        this._continuousMode = false;
+        this._isRecording = false;
+        this._isPaused = false;
 
-        // 功能状态
-        this._continuousMode = false; // 连读模式
-        this._isRecording = false;    // 录音中
-
-        // 回调
-        this._onRepeat = null;     // 复读
-        this._onContinuous = null; // 连读开关
-        this._onAssess = null;     // 评测
-        this._onRecite = null;     // 背诵
+        this._onRepeat = null;
+        this._onContinuous = null;
+        this._onAssess = null;
+        this._onRecite = null;
+        this._onFullRecite = null;
+        this._onPause = null;
+        this._onVoiceSwitch = null;
     }
 
-    /**
-     * 渲染数字人到容器中
-     * @param {string} imageSrc - 数字人图片路径
-     */
     render(imageSrc) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'digital-avatar-wrapper';
-        wrapper.innerHTML = `
-            <div class="digital-avatar" id="digitalAvatar">
-                <div class="avatar-glow"></div>
-                <img class="avatar-image" src="${imageSrc}" alt="AI数字人老师" />
-                <div class="avatar-speech-waves" id="avatarWaves">
-                    <span class="wave-bar"></span>
-                    <span class="wave-bar"></span>
-                    <span class="wave-bar"></span>
-                    <span class="wave-bar"></span>
-                    <span class="wave-bar"></span>
-                </div>
-                <div class="avatar-status" id="avatarStatus">
-                    <span class="status-icon">😊</span>
-                    <span class="status-text">点击课本内容开始学习</span>
-                </div>
-            </div>
-            <div class="avatar-action-buttons" id="avatarActions">
-                <button class="avatar-action-btn" data-action="repeat" title="复读">
-                    <span class="action-icon">🔁</span>
-                    <span class="action-label">复读</span>
-                </button>
-                <button class="avatar-action-btn" data-action="continuous" title="连读">
-                    <span class="action-icon">▶️</span>
-                    <span class="action-label">连读</span>
-                </button>
-                <button class="avatar-action-btn" data-action="assess" title="评测">
-                    <span class="action-icon">🎯</span>
-                    <span class="action-label">评测</span>
-                </button>
-                <button class="avatar-action-btn" data-action="recite" title="背诵">
-                    <span class="action-icon">📝</span>
-                    <span class="action-label">背诵</span>
-                </button>
-                <button class="avatar-action-btn" data-action="fullRecite" title="全文背诵">
-                    <span class="action-icon">📖</span>
-                    <span class="action-label">全文背诵</span>
-                </button>
-            </div>
+        // 不再创建浮动面板，而是注入到底部页码栏
+        this._injectToolbar();
+        this._addStyles();
+        this._log('工具栏已注入底部栏');
+    }
+
+    _injectToolbar() {
+        const bar = document.querySelector('.book-flipper-page-indicator');
+        if (!bar) { this._log('底部栏未找到'); return; }
+        this._barEl = bar;
+
+        // 插入分隔线 + 功能按钮区
+        const toolGroup = document.createElement('div');
+        toolGroup.className = 'bar-tool-group';
+        toolGroup.id = 'barToolGroup';
+        toolGroup.innerHTML = `
+            <div class="bar-divider"></div>
+            <button class="bar-tool-btn" data-action="repeat" title="复读"><span class="bar-tool-icon">↻</span><span class="bar-tool-text">复读</span></button>
+            <button class="bar-tool-btn" data-action="continuous" title="连读"><span class="bar-tool-icon">⏩</span><span class="bar-tool-text">连读</span></button>
+            <button class="bar-tool-btn" data-action="assess" title="评测"><span class="bar-tool-icon">✎</span><span class="bar-tool-text">评测</span></button>
+            <button class="bar-tool-btn" data-action="recite" title="背诵"><span class="bar-tool-icon">¶</span><span class="bar-tool-text">背诵</span></button>
+            <button class="bar-tool-btn" data-action="fullRecite" title="全文背诵"><span class="bar-tool-icon">☰</span><span class="bar-tool-text">全文背诵</span></button>
+            <button class="bar-tool-btn" data-action="voiceSwitch" title="音色切换"><span class="bar-tool-icon">♪</span><span class="bar-tool-text">音色</span></button>
         `;
-        this._container.appendChild(wrapper);
+        bar.appendChild(toolGroup);
+        this._toolGroupEl = toolGroup;
 
-        this._wrapperEl = wrapper;
-        this._avatarEl = wrapper.querySelector('#digitalAvatar');
-        this._wavesEl = wrapper.querySelector('#avatarWaves');
-        this._statusEl = wrapper.querySelector('#avatarStatus');
-        this._statusIcon = wrapper.querySelector('.status-icon');
-        this._statusText = wrapper.querySelector('.status-text');
-        this._actionsEl = wrapper.querySelector('#avatarActions');
-
-        // 创建暂停按钮并插入底部页码栏右侧
-        this._pauseBtnEl = this._createPauseButton();
+        // 暂停按钮（独立分区）
+        const pauseWrap = document.createElement('div');
+        pauseWrap.className = 'bar-pause-group';
+        pauseWrap.innerHTML = `<div class="bar-divider"></div><button class="bar-pause-btn hidden" id="barPauseBtn" title="暂停" aria-label="暂停播放"><span class="bar-pause-icon">⏸</span></button>`;
+        bar.appendChild(pauseWrap);
+        this._pauseWrapEl = pauseWrap;
+        this._pauseBtnEl = pauseWrap.querySelector('#barPauseBtn');
 
         this._bindButtonEvents();
-        this._addStyles();
-        this._log('数字人已渲染');
     }
 
-    // ========== 按钮事件绑定 ==========
     _bindButtonEvents() {
-        this._actionsEl.querySelectorAll('.avatar-action-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const action = btn.dataset.action;
-                this._handleAction(action, btn);
+        if (this._toolGroupEl) {
+            this._toolGroupEl.querySelectorAll('.bar-tool-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this._handleAction(btn.dataset.action, btn);
+                });
             });
-        });
-        // 绑定暂停按钮事件
+        }
         if (this._pauseBtnEl) {
             this._pauseBtnEl.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -103,149 +77,76 @@ class DigitalAvatar {
         }
     }
 
-    // 创建暂停/继续按钮并插入底部页码栏
-    _createPauseButton() {
-        const pageIndicator = document.querySelector('.book-flipper-page-indicator');
-        if (!pageIndicator) return null;
-
-        const btn = document.createElement('button');
-        btn.className = 'pause-play-btn hidden';
-        btn.id = 'avatarPauseBtn';
-        btn.title = '暂停';
-        btn.setAttribute('aria-label', '暂停播放');
-        btn.innerHTML = '<span class="pause-play-icon">⏸️</span>';
-        pageIndicator.appendChild(btn);
-        return btn;
-    }
-
     _handleAction(action, btn) {
         switch (action) {
-            case 'repeat':
-                this._log('复读');
-                if (this._onRepeat) this._onRepeat();
-                break;
+            case 'repeat':   if (this._onRepeat) this._onRepeat(); break;
             case 'pause':
                 this._isPaused = !this._isPaused;
                 this._updatePauseButton();
-                this._log('暂停/继续:', this._isPaused);
                 if (this._onPause) this._onPause(this._isPaused);
                 break;
             case 'continuous':
                 this._continuousMode = !this._continuousMode;
                 btn.classList.toggle('active', this._continuousMode);
-                this._log('连读模式:', this._continuousMode);
                 if (this._onContinuous) this._onContinuous(this._continuousMode);
                 break;
-            case 'assess':
-                this._log('评测');
-                if (this._onAssess) this._onAssess();
-                break;
-            case 'recite':
-                this._log('背诵');
-                if (this._onRecite) this._onRecite();
-                break;
-            case 'fullRecite':
-                this._log('全文背诵');
-                if (this._onFullRecite) this._onFullRecite();
-                break;
+            case 'assess':    if (this._onAssess) this._onAssess(); break;
+            case 'recite':    if (this._onRecite) this._onRecite(); break;
+            case 'fullRecite': if (this._onFullRecite) this._onFullRecite(); break;
+            case 'voiceSwitch': if (this._onVoiceSwitch) this._onVoiceSwitch(); break;
         }
     }
 
     // ========== 回调注册 ==========
-    onRepeat(cb) { this._onRepeat = cb; }
+    onRepeat(cb)     { this._onRepeat = cb; }
     onContinuous(cb) { this._onContinuous = cb; }
-    onAssess(cb) { this._onAssess = cb; }
-    onRecite(cb) { this._onRecite = cb; }
+    onAssess(cb)     { this._onAssess = cb; }
+    onRecite(cb)     { this._onRecite = cb; }
     onFullRecite(cb) { this._onFullRecite = cb; }
-    onPause(cb) { this._onPause = cb; }
+    onPause(cb)      { this._onPause = cb; }
+    onVoiceSwitch(cb){ this._onVoiceSwitch = cb; }
 
-    // 显示暂停按钮（音频开始播放时调用）
+    // ========== 暂停按钮 ==========
     showPauseButton() {
         this._isPaused = false;
         this._updatePauseButton();
-        if (this._pauseBtnEl) {
-            this._pauseBtnEl.classList.remove('hidden');
-        }
+        if (this._pauseBtnEl) this._pauseBtnEl.classList.remove('hidden');
     }
-
-    // 隐藏暂停按钮（音频播放结束/停止时调用）
     hidePauseButton() {
         this._isPaused = false;
         this._updatePauseButton();
-        if (this._pauseBtnEl) {
-            this._pauseBtnEl.classList.add('hidden');
-        }
+        if (this._pauseBtnEl) this._pauseBtnEl.classList.add('hidden');
     }
-
-    // 更新暂停按钮的图标和文字
     _updatePauseButton() {
         if (!this._pauseBtnEl) return;
-        const icon = this._pauseBtnEl.querySelector('.pause-play-icon');
+        const icon = this._pauseBtnEl.querySelector('.bar-pause-icon');
         if (this._isPaused) {
-            icon.textContent = '▶️';
+            icon.textContent = '▶';
             this._pauseBtnEl.title = '继续播放';
-            this._pauseBtnEl.setAttribute('aria-label', '继续播放');
             this._pauseBtnEl.classList.add('paused');
         } else {
-            icon.textContent = '⏸️';
+            icon.textContent = '⏸';
             this._pauseBtnEl.title = '暂停播放';
-            this._pauseBtnEl.setAttribute('aria-label', '暂停播放');
             this._pauseBtnEl.classList.remove('paused');
         }
     }
 
-    // ========== 说话动画 ==========
-    startSpeaking(text) {
-        if (this._isAnimating) return;
-        this._isAnimating = true;
-        this._avatarEl.classList.add('speaking');
-        this._statusIcon.textContent = '🎤';
-        this._statusText.textContent = text || '正在朗读...';
-        this._log('开始说话动画');
-    }
-
-    stopSpeaking() {
-        if (!this._isAnimating) return;
-        this._isAnimating = false;
-        this._avatarEl.classList.remove('speaking');
-        this._statusIcon.textContent = '😊';
-        this._statusText.textContent = '点击课本内容开始学习';
-        this._log('停止说话动画');
-    }
-
-    // ========== 录音状态 ==========
-    setRecording(isRecording, text) {
-        this._isRecording = isRecording;
-        if (isRecording) {
-            this._avatarEl.classList.add('recording');
-            this._statusIcon.textContent = '🔴';
-            this._statusText.textContent = text || '录音中...';
-        } else {
-            this._avatarEl.classList.remove('recording');
-            this._statusIcon.textContent = '😊';
-            this._statusText.textContent = '点击课本内容开始学习';
-        }
-    }
-
-    /** 更新状态文字 */
-    setStatus(icon, text) {
-        this._statusIcon.textContent = icon;
-        this._statusText.textContent = text;
-    }
-
-    /** 连读模式是否开启 */
+    // ========== 兼容旧接口 ==========
+    startSpeaking(text) { this._isAnimating = true; }
+    stopSpeaking()      { this._isAnimating = false; }
+    setRecording(isRecording, text) { this._isRecording = isRecording; }
+    setStatus(icon, text) {}
     isContinuousMode() { return this._continuousMode; }
-
-    isSpeaking() { return this._isAnimating; }
-
-    setDebug(enabled) { this._debug = enabled; }
+    isSpeaking()       { return this._isAnimating; }
+    setDebug(enabled)  { this._debug = enabled; }
 
     destroy() {
-            this.stopSpeaking();
-            if (this._pauseBtnEl) this._pauseBtnEl.remove();
-            if (this._wrapperEl) this._wrapperEl.remove();
-        }
-
+        if (this._pauseBtnEl) this._pauseBtnEl.remove();
+        if (this._toolGroupEl) this._toolGroupEl.remove();
+        if (this._pauseWrapEl) this._pauseWrapEl.remove();
+        // 不再有 wrapper 挂在 body 上，但保留兼容
+        if (this._wrapperEl) this._wrapperEl.remove();
+    }
 
     _log(...args) {
         if (this._debug) console.log('[DigitalAvatar]', ...args);
@@ -256,493 +157,173 @@ class DigitalAvatar {
         const style = document.createElement('style');
         style.id = 'digital-avatar-styles';
         style.textContent = `
-            /* ===== 整体布局 ===== */
-            .digital-avatar-wrapper {
-                position: fixed;
-                right: 20px;
-                bottom: 80px;
-                z-index: 100;
-                display: flex;
-                flex-direction: row;
-                align-items: flex-end;
-                gap: 10px;
-                pointer-events: none;
+            /* ===== 底部栏整体调整 ===== */
+            .book-flipper-page-indicator {
+                gap: 0 !important;
+                padding: 6px 10px !important;
             }
 
-            /* ===== 功能按钮组 ===== */
-            .avatar-action-buttons {
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-                pointer-events: auto;
-                order: -1; /* 按钮在左，数字人在右 */
+            /* ===== 分隔线 ===== */
+            .bar-divider {
+                width: 1px;
+                height: 28px;
+                background: #E0E0E0;
+                margin: 0 8px;
+                flex-shrink: 0;
             }
 
-            .avatar-action-btn {
+            /* ===== 功能按钮区 ===== */
+            .bar-tool-group {
+                display: flex;
+                align-items: center;
+                gap: 2px;
+            }
+
+            .bar-tool-btn {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                width: 72px;
-                height: 72px;
+                width: 46px;
+                height: 42px;
                 border: none;
-                border-radius: 18px;
-                background: rgba(255,255,255,0.95);
-                box-shadow: 0 3px 14px rgba(0,0,0,0.1);
+                border-radius: 10px;
+                background: transparent;
                 cursor: pointer;
-                transition: all 0.25s cubic-bezier(0.175,0.885,0.32,1.275);
-                padding: 6px;
-                gap: 3px;
+                transition: all 0.18s ease;
+                padding: 2px 0;
+                gap: 1px;
+                color: #666;
             }
-
-            .avatar-action-btn:hover {
-                transform: scale(1.1);
-                box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            .bar-tool-btn:hover {
+                background: rgba(0,0,0,0.05);
+                color: #333;
             }
-
-            .avatar-action-btn:active {
-                transform: scale(0.95);
-            }
-
-            .avatar-action-btn.active {
-                background: linear-gradient(135deg, #4DD0E1, #26C6DA);
-                color: white;
-                box-shadow: 0 4px 16px rgba(77,208,225,0.4);
-            }
-
-            .avatar-action-btn.active .action-label {
-                color: white;
-            }
-
-            /* 底部栏暂停/继续按钮 */
-            .pause-play-btn {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 44px;
-                height: 44px;
-                border: none;
-                border-radius: 50%;
-                background: linear-gradient(135deg, #4DD0E1, #26C6DA);
-                color: white;
-                cursor: pointer;
-                transition: all 0.25s cubic-bezier(0.175,0.885,0.32,1.275);
-                box-shadow: 0 3px 12px rgba(77,208,225,0.35);
-                margin-left: 4px;
-                animation: pause-btn-pop 0.3s ease;
-            }
-
-            .pause-play-btn:hover {
-                transform: scale(1.12);
-                box-shadow: 0 4px 16px rgba(77,208,225,0.5);
-            }
-
-            .pause-play-btn:active {
+            .bar-tool-btn:active {
                 transform: scale(0.92);
             }
-
-            .pause-play-btn.paused {
-                background: linear-gradient(135deg, #66BB6A, #43A047);
-                box-shadow: 0 3px 12px rgba(76,175,80,0.35);
+            .bar-tool-btn.active {
+                background: #E0F7FA;
+                color: #00897B;
             }
 
-            .pause-play-btn.hidden {
-                display: none;
-            }
-
-            .pause-play-icon {
-                font-size: 20px;
+            .bar-tool-icon {
+                font-size: 18px;
                 line-height: 1;
+                font-style: normal;
             }
-
-            @keyframes pause-btn-pop {
-                from { opacity: 0; transform: scale(0.5); }
-                to { opacity: 1; transform: scale(1); }
-            }
-
-            .avatar-action-btn.recording {
-                background: linear-gradient(135deg, #EF5350, #E53935);
-                color: white;
-                animation: recording-pulse 1s ease-in-out infinite;
-            }
-
-            .avatar-action-btn.recording .action-label {
-                color: white;
-            }
-
-            @keyframes recording-pulse {
-                0%, 100% { box-shadow: 0 2px 10px rgba(229,57,53,0.3); }
-                50% { box-shadow: 0 4px 20px rgba(229,57,53,0.6); }
-            }
-
-            .action-icon {
-                font-size: 28px;
-                line-height: 1;
-            }
-
-            .action-label {
-                font-size: 13px;
-                color: #5D4037;
+            .bar-tool-text {
+                font-size: 10px;
                 font-weight: 600;
                 line-height: 1;
-            }
-
-            /* ===== 数字人主体 ===== */
-            .digital-avatar {
-                position: relative;
-                height: 600px;
-                width: auto;
-                pointer-events: auto;
-                transition: transform 0.3s ease;
-            }
-
-            .digital-avatar:hover {
-                transform: scale(1.05);
-            }
-
-            .avatar-image {
-                height: 100%;
-                width: auto;
-                display: block;
-                filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
-                transition: filter 0.3s ease;
-            }
-
-            .digital-avatar.speaking .avatar-image {
-                filter: drop-shadow(0 4px 20px rgba(77,208,225,0.4));
-            }
-
-            .digital-avatar.recording .avatar-image {
-                filter: drop-shadow(0 4px 20px rgba(229,57,53,0.4));
-            }
-
-            .avatar-glow {
-                position: absolute;
-                bottom: -8px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 80%;
-                height: 16px;
-                background: radial-gradient(ellipse, rgba(77,208,225,0.25) 0%, transparent 70%);
-                border-radius: 50%;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-            }
-
-            .digital-avatar.speaking .avatar-glow {
-                opacity: 1;
-                animation: glow-pulse 1.5s ease-in-out infinite;
-            }
-
-            .digital-avatar.recording .avatar-glow {
-                opacity: 1;
-                background: radial-gradient(ellipse, rgba(229,57,53,0.25) 0%, transparent 70%);
-                animation: glow-pulse 1.5s ease-in-out infinite;
-            }
-
-            @keyframes glow-pulse {
-                0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(1); }
-                50% { opacity: 1; transform: translateX(-50%) scale(1.15); }
-            }
-
-            .digital-avatar.speaking {
-                animation: avatar-bob 0.6s ease-in-out infinite;
-            }
-
-            @keyframes avatar-bob {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-3px); }
-            }
-
-            /* 声波 */
-            .avatar-speech-waves {
-                position: absolute;
-                left: -40px;
-                top: 18%;
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-            }
-
-            .digital-avatar.speaking .avatar-speech-waves {
-                opacity: 1;
-            }
-
-            .wave-bar {
-                display: block;
-                width: 4px;
-                height: 14px;
-                background: var(--color-primary, #FFAB40);
-                border-radius: 2px;
-            }
-
-            .digital-avatar.speaking .wave-bar {
-                animation: wave-bounce 0.8s ease-in-out infinite;
-            }
-
-            .digital-avatar.speaking .wave-bar:nth-child(1) { animation-delay: 0s; height: 12px; }
-            .digital-avatar.speaking .wave-bar:nth-child(2) { animation-delay: 0.1s; height: 20px; }
-            .digital-avatar.speaking .wave-bar:nth-child(3) { animation-delay: 0.2s; height: 14px; }
-            .digital-avatar.speaking .wave-bar:nth-child(4) { animation-delay: 0.3s; height: 22px; }
-            .digital-avatar.speaking .wave-bar:nth-child(5) { animation-delay: 0.15s; height: 10px; }
-
-            @keyframes wave-bounce {
-                0%, 100% { transform: scaleY(0.4); opacity: 0.5; }
-                50% { transform: scaleY(1); opacity: 1; }
-            }
-
-            /* 状态文字 */
-            .avatar-status {
-                position: absolute;
-                bottom: -38px;
-                left: 50%;
-                transform: translateX(-50%);
                 white-space: nowrap;
-                background: rgba(255,255,255,0.95);
-                padding: 6px 16px;
-                border-radius: 14px;
-                font-size: 14px;
-                color: #5D4037;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+
+            /* ===== 暂停按钮区 ===== */
+            .bar-pause-group {
                 display: flex;
                 align-items: center;
-                gap: 6px;
-                transition: all 0.3s ease;
             }
-
-            .digital-avatar.speaking .avatar-status {
-                background: linear-gradient(135deg, rgba(77,208,225,0.15), rgba(255,255,255,0.95));
+            .bar-pause-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 38px;
+                height: 38px;
+                border: none;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #4DD0E1, #26C6DA);
+                color: white;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 8px rgba(77,208,225,0.3);
+                font-size: 16px;
             }
-
-            .digital-avatar.recording .avatar-status {
-                background: linear-gradient(135deg, rgba(229,57,53,0.1), rgba(255,255,255,0.95));
+            .bar-pause-btn:hover { transform: scale(1.1); }
+            .bar-pause-btn:active { transform: scale(0.9); }
+            .bar-pause-btn.paused {
+                background: linear-gradient(135deg, #66BB6A, #43A047);
+                box-shadow: 0 2px 8px rgba(76,175,80,0.3);
             }
+            .bar-pause-btn.hidden { display: none; }
+            .bar-pause-icon { font-style: normal; }
 
             /* ===== 评测结果弹窗 ===== */
             .assess-result-popup {
-                position: fixed;
-                top: 50%;
-                left: 50%;
+                position: fixed; top: 50%; left: 50%;
                 transform: translate(-50%, -50%);
-                background: white;
-                border-radius: 20px;
-                padding: 24px;
-                min-width: 300px;
-                max-width: min(90vw, 560px);
-                max-height: 85vh;
-                overflow-y: auto;
+                background: white; border-radius: 20px; padding: 24px;
+                min-width: 300px; max-width: min(90vw, 560px);
+                max-height: 85vh; overflow-y: auto;
                 box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-                z-index: 200;
-                text-align: center;
+                z-index: 200; text-align: center;
                 animation: popup-in 0.3s ease;
             }
-
-            @keyframes popup-in {
-                from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-                to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            }
-
-            .assess-result-popup .result-title {
-                font-size: 18px;
-                font-weight: bold;
-                margin-bottom: 12px;
-                color: #5D4037;
-            }
-
-            .assess-result-popup .result-score {
-                font-size: 48px;
-                font-weight: 800;
-                margin: 8px 0;
-            }
-
+            @keyframes popup-in { from { opacity:0; transform: translate(-50%,-50%) scale(0.8); } to { opacity:1; transform: translate(-50%,-50%) scale(1); } }
+            .assess-result-popup .result-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: #5D4037; }
+            .assess-result-popup .result-score { font-size: 48px; font-weight: 800; margin: 8px 0; }
             .assess-result-popup .result-score.perfect { color: #E91E63; }
             .assess-result-popup .result-score.excellent { color: #4CAF50; }
             .assess-result-popup .result-score.good { color: #2196F3; }
             .assess-result-popup .result-score.pass { color: #FF9800; }
             .assess-result-popup .result-score.poor { color: #F44336; }
+            .assess-result-popup .result-detail { font-size: 14px; color: #8D6E63; margin: 8px 0 16px; line-height: 1.6; }
+            .assess-result-popup .result-close-btn { padding: 8px 32px; border: none; border-radius: 20px; background: linear-gradient(135deg, #4DD0E1, #26C6DA); color: white; font-size: 14px; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
+            .assess-result-popup .result-close-btn:hover { transform: scale(1.05); }
+            .assess-action-btns { display: flex; justify-content: center; gap: 12px; margin: 16px 0 12px; }
+            .assess-action-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 14px; border: 1.5px solid #E0E0E0; border-radius: 12px; background: #FAFAFA; cursor: pointer; transition: all 0.2s ease; min-width: 72px; }
+            .assess-action-btn:hover { background: #F0F7FF; border-color: #90CAF9; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+            .assess-action-btn:active { transform: scale(0.96); }
+            .assess-action-btn.playing { background: #E3F2FD; border-color: #42A5F5; }
+            .assess-btn-icon { font-size: 22px; }
+            .assess-btn-text { font-size: 11px; color: #666; font-weight: 500; white-space: nowrap; }
+            .assess-action-btn.playing .assess-btn-text { color: #1976D2; }
+            .word-scores-section { margin: 12px 0; text-align: left; }
+            .word-scores-label { font-size: 13px; color: #999; margin-bottom: 8px; }
+            .word-scores-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+            .word-score-item { display: inline-flex; flex-direction: column; align-items: center; padding: 4px 8px; background: #FAFAFA; border-radius: 6px; }
+            .word-text { font-size: 16px; color: #333; font-weight: 500; }
+            .word-score-val { font-size: 12px; font-weight: bold; margin-top: 2px; }
+            .dimension-section { margin: 14px 0 8px; padding: 10px 12px; background: #FAFAFA; border-radius: 10px; }
+            .dimension-row { display: flex; align-items: center; margin: 6px 0; }
+            .dimension-label { font-size: 13px; color: #666; width: 52px; flex-shrink: 0; }
+            .dimension-bar-bg { flex: 1; height: 8px; background: #E0E0E0; border-radius: 4px; overflow: hidden; margin: 0 8px; }
+            .dimension-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+            .dimension-value { font-size: 13px; font-weight: bold; width: 40px; text-align: right; flex-shrink: 0; }
+            .assess-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 199; }
 
-            .assess-result-popup .result-detail {
-                font-size: 14px;
-                color: #8D6E63;
-                margin: 8px 0 16px;
-                line-height: 1.6;
+            /* 音色切换弹窗 */
+            .voice-switch-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 199; }
+            .voice-switch-popup {
+                position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+                background: white; border-radius: 16px; padding: 16px;
+                min-width: 220px; box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+                z-index: 200;
             }
-
-            .assess-result-popup .result-close-btn {
-                padding: 8px 32px;
-                border: none;
-                border-radius: 20px;
-                background: linear-gradient(135deg, #4DD0E1, #26C6DA);
-                color: white;
-                font-size: 14px;
-                font-weight: bold;
-                cursor: pointer;
-                transition: transform 0.2s;
-            }
-
-            .assess-result-popup .result-close-btn:hover {
-                transform: scale(1.05);
-            }
-
-            /* 评测结果操作按钮组 */
-            .assess-action-btns {
-                display: flex;
-                justify-content: center;
-                gap: 12px;
-                margin: 16px 0 12px;
-            }
-            .assess-action-btn {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 4px;
-                padding: 10px 14px;
-                border: 1.5px solid #E0E0E0;
-                border-radius: 12px;
-                background: #FAFAFA;
-                cursor: pointer;
-                transition: all 0.2s ease;
-                min-width: 72px;
-            }
-            .assess-action-btn:hover {
-                background: #F0F7FF;
-                border-color: #90CAF9;
-                transform: translateY(-1px);
-                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            }
-            .assess-action-btn:active {
-                transform: scale(0.96);
-            }
-            .assess-action-btn.playing {
-                background: #E3F2FD;
-                border-color: #42A5F5;
-            }
-            .assess-btn-icon {
-                font-size: 22px;
-            }
-            .assess-btn-text {
-                font-size: 11px;
-                color: #666;
-                font-weight: 500;
-                white-space: nowrap;
-            }
-            .assess-action-btn.playing .assess-btn-text {
-                color: #1976D2;
-            }
-
-            /* 逐词评分 */
-            .word-scores-section {
-                margin: 12px 0;
-                text-align: left;
-            }
-            .word-scores-label {
-                font-size: 13px;
-                color: #999;
-                margin-bottom: 8px;
-            }
-            .word-scores-list {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-                justify-content: center;
-            }
-            .word-score-item {
-                display: inline-flex;
-                flex-direction: column;
-                align-items: center;
-                padding: 4px 8px;
-                background: #FAFAFA;
-                border-radius: 6px;
-            }
-            .word-text {
-                font-size: 16px;
-                color: #333;
-                font-weight: 500;
-            }
-            .word-score-val {
-                font-size: 12px;
-                font-weight: bold;
-                margin-top: 2px;
-            }
-
-            /* 三维度评分 */
-            .dimension-section {
-                margin: 14px 0 8px;
-                padding: 10px 12px;
-                background: #FAFAFA;
-                border-radius: 10px;
-            }
-            .dimension-row {
-                display: flex;
-                align-items: center;
-                margin: 6px 0;
-            }
-            .dimension-label {
-                font-size: 13px;
-                color: #666;
-                width: 52px;
-                flex-shrink: 0;
-            }
-            .dimension-bar-bg {
-                flex: 1;
-                height: 8px;
-                background: #E0E0E0;
-                border-radius: 4px;
-                overflow: hidden;
-                margin: 0 8px;
-            }
-            .dimension-bar-fill {
-                height: 100%;
-                border-radius: 4px;
-                transition: width 0.6s ease;
-            }
-            .dimension-value {
-                font-size: 13px;
-                font-weight: bold;
-                width: 40px;
-                text-align: right;
-                flex-shrink: 0;
-            }
-
-            .assess-overlay {
-                position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,0.4);
-                z-index: 199;
-            }
+            .voice-switch-popup .voice-title { font-size: 15px; font-weight: bold; color: #5D4037; margin-bottom: 12px; text-align: center; }
+            .voice-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: background 0.15s; margin-bottom: 4px; border: 2px solid transparent; }
+            .voice-option:hover { background: #FFF3E0; }
+            .voice-option.selected { border-color: #4DD0E1; background: #E0F7FA; }
+            .voice-option.disabled { opacity: 0.45; cursor: not-allowed; }
+            .voice-option-icon { font-size: 24px; }
+            .voice-option-info { flex: 1; }
+            .voice-option-name { font-size: 14px; font-weight: 600; color: #333; }
+            .voice-option-desc { font-size: 11px; color: #999; }
+            .voice-option-check { font-size: 18px; color: #4DD0E1; }
 
             /* ===== 响应式 ===== */
             @media (max-width: 768px) {
-                .digital-avatar-wrapper {
-                    right: 10px;
-                    bottom: 10px;
-                    gap: 8px;
-                }
-                .digital-avatar { height: 350px; width: auto; }
-                .avatar-action-btn {
-                    width: 52px;
-                    height: 52px;
-                    border-radius: 14px;
-                }
-                .action-icon { font-size: 20px; }
-                .action-label { font-size: 10px; }
-                .avatar-speech-waves { left: -24px; gap: 3px; }
-                .wave-bar { width: 3px; }
-                .avatar-status { font-size: 11px; padding: 4px 10px; bottom: -30px; }
+                .bar-tool-btn { width: 40px; height: 36px; }
+                .bar-tool-icon { font-size: 15px; }
+                .bar-tool-text { font-size: 9px; }
+                .bar-divider { height: 22px; margin: 0 5px; }
+                .bar-pause-btn { width: 32px; height: 32px; font-size: 14px; }
             }
-
             @media (max-width: 480px) {
-                .digital-avatar { height: 220px; width: auto; }
-                .avatar-action-btn {
-                    width: 42px;
-                    height: 42px;
-                    border-radius: 12px;
-                }
-                .action-icon { font-size: 16px; }
-                .action-label { display: none; }
-                .avatar-status { display: none; }
+                .bar-tool-text { display: none; }
+                .bar-tool-btn { width: 34px; height: 32px; }
+                .bar-tool-icon { font-size: 14px; }
+                .bar-divider { margin: 0 3px; }
             }
         `;
         document.head.appendChild(style);

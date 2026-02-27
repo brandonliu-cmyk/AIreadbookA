@@ -2273,6 +2273,11 @@ async function renderReadingPage() {
         startFullRecitation();
     });
 
+    // 音色切换：弹出音色选择面板
+    digitalAvatar.onVoiceSwitch(() => {
+        showVoiceSwitchPopup();
+    });
+
     // 暂停/继续：暂停或继续当前音频播放
     digitalAvatar.onPause((isPaused) => {
         if (isPaused) {
@@ -4572,6 +4577,74 @@ function addFullReciteMaskStyle() {
         }
     `;
     document.head.appendChild(style);
+}
+
+/**
+ * 音色切换弹窗
+ */
+async function showVoiceSwitchPopup() {
+    // 移除已有弹窗
+    document.querySelectorAll('.voice-switch-overlay, .voice-switch-popup').forEach(el => el.remove());
+
+    const voices = await dataManager.getVoices();
+    const state = appController.getCurrentState();
+    const currentVoiceId = state.selectedVoice ? state.selectedVoice.id : 'voice-female';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'voice-switch-overlay';
+
+    const popup = document.createElement('div');
+    popup.className = 'voice-switch-popup';
+
+    const voiceIcons = { male: '👨', female: '👩', child: '👧' };
+
+    popup.innerHTML = `
+        <div class="voice-title">🎙️ 选择音色</div>
+        ${voices.map(v => `
+            <div class="voice-option ${v.id === currentVoiceId ? 'selected' : ''} ${v.disabled ? 'disabled' : ''}" data-voice-id="${v.id}">
+                <span class="voice-option-icon">${voiceIcons[v.type] || '🎤'}</span>
+                <div class="voice-option-info">
+                    <div class="voice-option-name">${v.name}</div>
+                    <div class="voice-option-desc">${v.disabled ? '即将上线' : v.description}</div>
+                </div>
+                ${v.id === currentVoiceId ? '<span class="voice-option-check">✓</span>' : ''}
+            </div>
+        `).join('')}
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(popup);
+
+    // 定位到音色按钮上方
+    const voiceBtn = document.querySelector('[data-action="voiceSwitch"]');
+    if (voiceBtn) {
+        const rect = voiceBtn.getBoundingClientRect();
+        popup.style.position = 'fixed';
+        popup.style.left = rect.left + rect.width / 2 + 'px';
+        popup.style.transform = 'translateX(-50%)';
+        popup.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+        popup.style.top = 'auto';
+    }
+
+    const close = () => { overlay.remove(); popup.remove(); };
+    overlay.addEventListener('click', close);
+
+    popup.querySelectorAll('.voice-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            const voiceId = opt.dataset.voiceId;
+            const voice = voices.find(v => v.id === voiceId);
+            if (!voice || voice.disabled) {
+                showToast('该音色即将上线，敬请期待', 'info');
+                return;
+            }
+            // 应用音色
+            if (audioPlayer) audioPlayer.setVoice(voiceId);
+            appController.setSelectedVoice(voice);
+            saveToStorage('userPreferences', { selectedVoiceId: voiceId });
+            showToast(`已切换为「${voice.name}」`, 'success', 2000);
+            close();
+        });
+    });
 }
 
 /**

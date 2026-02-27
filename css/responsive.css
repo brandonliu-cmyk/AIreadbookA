@@ -1341,16 +1341,16 @@
     }
     
     .zoom-btn {
-        width: var(--touch-target-min);
-        height: var(--touch-target-min);
+        width: 34px;
+        height: 32px;
     }
     
     .zoom-btn-reset {
-        min-width: var(--touch-target-min);
+        min-width: auto;
     }
     
     .zoom-btn-text {
-        font-size: 10px;
+        font-size: 9px;
     }
     
     .zoom-hint {
@@ -1364,12 +1364,12 @@
     }
     
     .zoom-btn {
-        width: 52px;
-        height: 52px;
+        width: 42px;
+        height: 42px;
     }
     
     .zoom-btn-reset {
-        min-width: 80px;
+        min-width: auto;
     }
 }
 

@@ -165,7 +165,7 @@ class BookFlipper {
             <!-- 页码指示器 -->
             <div class="book-flipper-page-indicator">
                 <button class="page-nav-btn page-nav-prev" aria-label="上一页" title="上一页">
-                    <span class="nav-icon">📖</span><span class="nav-arrow">‹</span>
+                    <span class="nav-arrow">‹</span>
                 </button>
                 <div class="page-indicator-display">
                     <span class="current-page-num">1</span>
@@ -173,7 +173,7 @@ class BookFlipper {
                     <span class="total-pages-num">1</span>
                 </div>
                 <button class="page-nav-btn page-nav-next" aria-label="下一页" title="下一页">
-                    <span class="nav-arrow">›</span><span class="nav-icon">📖</span>
+                    <span class="nav-arrow">›</span>
                 </button>
             </div>
             

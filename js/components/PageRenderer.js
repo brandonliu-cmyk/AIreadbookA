@@ -655,16 +655,16 @@ class PageRenderer {
         }
 
         const controls = document.createElement('div');
-        controls.className = 'zoom-controls animate-bounce-in';
+        controls.className = 'zoom-controls';
         controls.innerHTML = `
             <button class="zoom-btn zoom-btn-out" data-action="zoom-out" title="缩小" aria-label="缩小页面">
-                <span class="zoom-btn-icon">➖</span>
+                <span class="zoom-btn-icon">−</span>
             </button>
             <button class="zoom-btn zoom-btn-reset" data-action="zoom-reset" title="重置" aria-label="重置缩放">
                 <span class="zoom-btn-text">${Math.round(this._zoomScale * 100)}%</span>
             </button>
             <button class="zoom-btn zoom-btn-in" data-action="zoom-in" title="放大" aria-label="放大页面">
-                <span class="zoom-btn-icon">➕</span>
+                <span class="zoom-btn-icon">+</span>
             </button>
         `;
 
@@ -689,10 +689,15 @@ class PageRenderer {
 
         this._zoomControlsContainer = controls;
         
-        // 添加到翻页指示器中，与翻页按钮并排显示
+        // 添加到翻页指示器中，插入到功能按钮区之前，保持位置固定
         const pageIndicator = document.querySelector('.book-flipper-page-indicator');
         if (pageIndicator) {
-            pageIndicator.appendChild(controls);
+            const toolGroup = pageIndicator.querySelector('#barToolGroup');
+            if (toolGroup) {
+                pageIndicator.insertBefore(controls, toolGroup);
+            } else {
+                pageIndicator.appendChild(controls);
+            }
         } else {
             document.body.appendChild(controls);
         }

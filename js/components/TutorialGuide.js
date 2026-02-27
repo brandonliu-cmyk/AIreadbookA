@@ -21,7 +21,7 @@ class TutorialGuide {
         {
             id: 'welcome',
             title: '欢迎来到AI点读！',
-            description: '这是一个专为小朋友设计的学习应用，让我们一起开始快乐的学习之旅吧！',
+            description: '让我们一起开始快乐的学习之旅吧！',
             icon: '🎉',
             mascot: '🐰',
             backgroundColor: 'var(--gradient-primary)',
@@ -30,7 +30,7 @@ class TutorialGuide {
         {
             id: 'subject',
             title: '选择你喜欢的学科',
-            description: '点击学科卡片，选择你想学习的科目，有英语、语文、数学等好多学科哦！',
+            description: '点击学科卡片，选择你想学习的科目！',
             icon: '📚',
             mascot: '🦊',
             backgroundColor: 'var(--gradient-secondary)',
@@ -49,7 +49,7 @@ class TutorialGuide {
         {
             id: 'reading',
             title: '点击就能听朗读',
-            description: '看到课本上的文字了吗？点一点就能听到标准的朗读声音，跟着一起读吧！',
+            description: '看到课本上的文字了吗？点一点就能听到标准佳的朗读声音，跟着一起读吧！',
             icon: '🔊',
             mascot: '🐼',
             backgroundColor: 'var(--gradient-sunset)',
@@ -58,7 +58,7 @@ class TutorialGuide {
         {
             id: 'complete',
             title: '准备好了吗？',
-            description: '太棒了！你已经学会使用AI点读啦！现在开始你的学习冒险吧！',
+            description: '太棒了！你已经学会使用AI点读啦！现在开始你的学习吧！',
             icon: '🌟',
             mascot: '🦁',
             backgroundColor: 'var(--gradient-rainbow)',
