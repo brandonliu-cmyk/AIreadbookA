@@ -111,9 +111,10 @@ const BackstageData = (() => {
 
     // 音色列表
     const VOICES = [
-        { id: 'male', name: '标准男声', enabled: true },
-        { id: 'female', name: '甜美女声', enabled: true },
-        { id: 'child', name: '可爱童声', enabled: true },
+        { id: 'cn_male', name: '中文男声', enabled: true },
+        { id: 'cn_female', name: '中文女声', enabled: true },
+        { id: 'en_male', name: '英文男声', enabled: true },
+        { id: 'en_female', name: '英文女声', enabled: true },
     ];
 
     // 存储键前缀

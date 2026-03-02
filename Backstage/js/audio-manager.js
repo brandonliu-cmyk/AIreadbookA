@@ -114,12 +114,13 @@ const AudioManager = (() => {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = /[\u4e00-\u9fa5]/.test(text) ? 'zh-CN' : 'en-US';
+            utterance.lang = voiceId.startsWith('cn_') ? 'zh-CN' : 'en-US';
             utterance.rate = 0.9;
             switch (voiceId) {
-                case 'male': utterance.pitch = 0.8; break;
-                case 'female': utterance.pitch = 1.3; break;
-                case 'child': utterance.pitch = 1.6; utterance.rate = 1.0; break;
+                case 'cn_male': utterance.pitch = 0.8; break;
+                case 'cn_female': utterance.pitch = 1.3; break;
+                case 'en_male': utterance.pitch = 0.8; break;
+                case 'en_female': utterance.pitch = 1.3; break;
             }
             window.speechSynthesis.speak(utterance);
             return utterance;
