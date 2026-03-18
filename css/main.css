@@ -886,6 +886,157 @@ body {
     color: var(--color-text-secondary);
 }
 
+/* 首页课本选择模块样式 */
+.textbook-selection-home {
+    padding: var(--spacing-lg);
+    background: var(--color-bg-primary);
+}
+
+.textbook-selection-title {
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-md);
+    text-align: center;
+}
+
+.publisher-tabs {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    overflow-x: auto;
+    padding-bottom: var(--spacing-xs);
+}
+
+.publisher-tab {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border-light);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    white-space: nowrap;
+}
+
+.publisher-tab:hover {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-primary);
+}
+
+.publisher-tab.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    font-weight: var(--font-weight-bold);
+}
+
+.textbook-grid-home {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.textbook-card-home {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-xl);
+    overflow: visible;
+    box-shadow: var(--shadow-md);
+    transition: all var(--duration-normal) var(--ease-bounce);
+    cursor: pointer;
+    border: 3px solid var(--color-border-light);
+    padding: var(--spacing-md);
+    position: relative;
+}
+
+.textbook-card-home:hover {
+    transform: translateY(-6px) rotate(-1deg);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--color-primary);
+}
+
+.textbook-card-home:active {
+    transform: translateY(-2px) scale(0.98);
+}
+
+.textbook-cover-home {
+    width: 80px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--spacing-sm);
+    position: relative;
+}
+
+.textbook-cover-home img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.textbook-cover-placeholder {
+    width: 100%;
+    height: 100%;
+    background: var(--gradient-rainbow);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-4xl);
+}
+
+.textbook-info-home {
+    text-align: center;
+    width: 100%;
+}
+
+.textbook-name-home {
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-xs);
+    line-height: 1.3;
+}
+
+.textbook-grade-home {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+}
+
+/* 进度标签样式 */
+.badge-completed,
+.badge-in-progress {
+    position: absolute;
+    top: var(--spacing-xs);
+    right: var(--spacing-xs);
+    padding: 2px 8px;
+    border-radius: var(--radius-md);
+    font-size: 10px;
+    font-weight: var(--font-weight-bold);
+    white-space: nowrap;
+    z-index: 1;
+}
+
+.badge-completed {
+    background: var(--color-success);
+    color: var(--color-text-inverse);
+}
+
+.badge-in-progress {
+    background: var(--color-warning);
+    color: var(--color-text-inverse);
+}
+
 /* ========================================
  * 游戏化动画效果
  * Requirements: 8.3

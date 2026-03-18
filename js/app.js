@@ -536,6 +536,15 @@ async function renderHomePage() {
                     <span class="subject-btn-name">语文</span>
                 </div>
             </div>
+            <div class="textbook-selection-section" id="textbookSelectionSection">
+                <h3 class="section-title-home">📚 课本选择</h3>
+                <div class="publisher-tabs" id="publisherTabs">
+                    <!-- 教材版本标签将动态生成 -->
+                </div>
+                <div class="textbook-grid-home" id="textbookGridHome">
+                    <!-- 课本卡片将动态生成 -->
+                </div>
+            </div>
             <div class="learning-history" style="margin-top: var(--spacing-lg);">
                 <h3 class="history-title">📚 学习记录</h3>
                 ${recordsHTML}
@@ -546,19 +555,8 @@ async function renderHomePage() {
     // 添加样式
     addHomePageStyles();
     
-    // 绑定学科按钮点击事件 - 跳转到对应学科的教材选择页面
-    const subjectBtns = document.querySelectorAll('.subject-btn');
-    subjectBtns.forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const subjectId = btn.dataset.subject;
-            // 获取学科对象
-            const subject = subjects.find(s => s.id === subjectId);
-            if (subject) {
-                // 导航到教材选择页面，传递学科对象
-                navigateTo(PageType.TEXTBOOK, { subject: subject });
-            }
-        });
-    });
+    // 初始化课本选择模块
+    await initTextbookSelection(subjects, allTextbooks);
     
     // 绑定教材卡片点击事件 - 继续学习该教材
     const textbookCards = document.querySelectorAll('.textbook-record-card');
@@ -631,6 +629,174 @@ async function renderHomePage() {
             }
         });
     });
+}
+
+/**
+ * 初始化首页课本选择模块
+ */
+async function initTextbookSelection(subjects, allTextbooks) {
+    const publisherTabs = document.getElementById('publisherTabs');
+    const textbookGrid = document.getElementById('textbookGridHome');
+    
+    // 默认选中英语
+    let currentSubject = subjects.find(s => s.id === 'english') || subjects[0];
+    let currentPublisher = null;
+    
+    // 渲染教材版本标签
+    function renderPublisherTabs(subject) {
+        const textbooks = allTextbooks.filter(t => t.subjectId === subject.id);
+        const publishers = [...new Set(textbooks.map(t => t.publisher))];
+        
+        publisherTabs.innerHTML = publishers.map((pub, idx) => `
+            <button class="publisher-tab ${idx === 0 ? 'active' : ''}" data-publisher="${pub}">
+                ${pub}
+            </button>
+        `).join('');
+        
+        currentPublisher = publishers[0];
+        
+        // 绑定标签点击事件
+        publisherTabs.querySelectorAll('.publisher-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                publisherTabs.querySelectorAll('.publisher-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentPublisher = tab.dataset.publisher;
+                renderTextbooks(currentSubject, currentPublisher);
+            });
+        });
+    }
+    
+    // 获取课本进度信息
+    function getTextbookProgress(textbookId) {
+        // 为特定教材设置固定的进度信息（与 TextbookSelector 保持一致）
+        if (textbookId === 'english-hj-3-1') {
+            return { hasProgress: true, isCompleted: true, progress: 100 };
+        } else if (textbookId === 'english-hj-3-1-new') {
+            return { hasProgress: true, isCompleted: false, progress: 50 };
+        } else if (textbookId === 'chinese-rj-1-1-new') {
+            return { hasProgress: true, isCompleted: true, progress: 100 };
+        } else if (textbookId === 'chinese-rj-1-2-new') {
+            return { hasProgress: true, isCompleted: true, progress: 100 };
+        } else if (textbookId === 'chinese-rj-2-1-new') {
+            return { hasProgress: true, isCompleted: false, progress: 35 };
+        }
+        
+        try {
+            // 尝试从 storageManager 获取学习记录
+            if (typeof storageManager !== 'undefined') {
+                const record = storageManager.getLearningRecord(textbookId);
+                if (record && record.progress) {
+                    const lessonIds = Object.keys(record.progress);
+                    if (lessonIds.length > 0) {
+                        const completedCount = lessonIds.filter(id => record.progress[id].isCompleted).length;
+                        const totalCount = record.totalLessons || lessonIds.length;
+                        const progress = Math.round((completedCount / totalCount) * 100);
+                        return {
+                            hasProgress: true,
+                            isCompleted: progress >= 100,
+                            progress: progress
+                        };
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('获取进度失败:', error);
+        }
+        return { hasProgress: false, isCompleted: false, progress: 0 };
+    }
+    
+    // 渲染课本卡片
+    function renderTextbooks(subject, publisher) {
+        const textbooks = allTextbooks.filter(t => 
+            t.subjectId === subject.id && t.publisher === publisher
+        );
+        
+        textbookGrid.innerHTML = textbooks.map(tb => {
+            // 使用 coverImage 字段（已包含完整路径）
+            const coverImagePath = tb.coverImage || '';
+            const hasCover = coverImagePath.length > 0;
+            
+            // 获取进度信息
+            const progressInfo = getTextbookProgress(tb.id);
+            let progressBadge = '';
+            if (progressInfo.hasProgress) {
+                if (progressInfo.isCompleted) {
+                    progressBadge = '<div class="badge-completed">✓ 已完成</div>';
+                } else {
+                    progressBadge = `<div class="badge-in-progress">进行中 ${progressInfo.progress}%</div>`;
+                }
+            }
+            
+            return `
+                <div class="textbook-card-home" data-textbook-id="${tb.id}">
+                    <div class="textbook-cover-home">
+                        ${hasCover ? `
+                            <img src="${encodeURI(coverImagePath)}" alt="${tb.name}" 
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                        ` : ''}
+                        <div class="textbook-cover-placeholder" style="${hasCover ? 'display:none;' : 'display:flex;'}">📖</div>
+                    </div>
+                    <div class="textbook-info-home">
+                        <div class="textbook-name-home">${tb.name}</div>
+                        <div class="textbook-grade-home">${tb.grade}年级${tb.semester}</div>
+                    </div>
+                    ${progressBadge}
+                </div>
+            `;
+        }).join('');
+        
+        // 绑定课本卡片点击事件
+        textbookGrid.querySelectorAll('.textbook-card-home').forEach(card => {
+            card.addEventListener('click', async () => {
+                const textbookId = card.dataset.textbookId;
+                const textbook = allTextbooks.find(t => t.id === textbookId);
+                if (textbook) {
+                    appController.setLoading(true);
+                    showToast(`正在加载${textbook.name}...`, 'info', 1500);
+                    try {
+                        navigateTo(PageType.CHAPTER, {
+                            subject: subject,
+                            textbook: textbook
+                        });
+                    } catch (error) {
+                        console.error('加载失败:', error);
+                        showToast('加载失败，请重试', 'error');
+                    } finally {
+                        appController.setLoading(false);
+                    }
+                }
+            });
+        });
+    }
+    
+    // 监听学科按钮切换 - 只切换课本显示，不跳转页面
+    document.querySelectorAll('.subject-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // 阻止事件冒泡
+            const subjectId = btn.dataset.subject;
+            
+            // 更新学科按钮选中状态
+            document.querySelectorAll('.subject-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            
+            // 切换课本显示
+            currentSubject = subjects.find(s => s.id === subjectId);
+            if (currentSubject) {
+                renderPublisherTabs(currentSubject);
+                renderTextbooks(currentSubject, currentPublisher);
+            }
+        });
+    });
+    
+    // 初始选中英语按钮
+    const defaultBtn = document.querySelector('.subject-btn[data-subject="english"]');
+    if (defaultBtn) {
+        defaultBtn.classList.add('selected');
+    }
+    
+    // 初始渲染
+    renderPublisherTabs(currentSubject);
+    renderTextbooks(currentSubject, currentPublisher);
 }
 
 /**
@@ -816,6 +982,10 @@ function addHomePageStyles() {
             .subject-btn:active {
                 transform: scale(0.95);
             }
+            .subject-btn.selected {
+                box-shadow: 0 0 0 3px rgba(255,255,255,0.5), var(--shadow-lg);
+                transform: scale(1.02);
+            }
             .subject-btn-icon {
                 font-size: 56px;
                 margin-bottom: var(--spacing-sm);
@@ -830,6 +1000,117 @@ function addHomePageStyles() {
                 margin: 0 auto;
                 padding: 0 var(--spacing-md);
                 box-sizing: border-box;
+            }
+            
+            /* 课本选择模块样式 */
+            .textbook-selection-section {
+                max-width: 1250px;
+                margin: var(--spacing-xl) auto 0;
+                padding: 0 var(--spacing-md);
+                box-sizing: border-box;
+            }
+            .section-title-home {
+                font-size: var(--font-size-lg);
+                color: var(--color-text);
+                margin-bottom: var(--spacing-md);
+                font-weight: var(--font-weight-bold);
+            }
+            .publisher-tabs {
+                display: flex;
+                gap: var(--spacing-sm);
+                margin-bottom: var(--spacing-md);
+                flex-wrap: wrap;
+            }
+            .publisher-tab {
+                padding: var(--spacing-xs) var(--spacing-lg);
+                border-radius: var(--radius-full);
+                border: 2px solid var(--color-border-light);
+                background: white;
+                color: var(--color-text-secondary);
+                font-size: var(--font-size-sm);
+                font-weight: var(--font-weight-semibold);
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            .publisher-tab:hover {
+                border-color: var(--color-primary);
+                color: var(--color-primary);
+            }
+            .publisher-tab.active {
+                background: var(--color-primary);
+                border-color: var(--color-primary);
+                color: white;
+            }
+            .textbook-grid-home {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: var(--spacing-md);
+                margin-bottom: var(--spacing-xl);
+            }
+            .textbook-card-home {
+                display: flex;
+                flex-direction: column;
+                background: white;
+                border-radius: var(--radius-lg);
+                overflow: hidden;
+                box-shadow: var(--shadow-sm);
+                cursor: pointer;
+                transition: all 0.2s ease;
+                position: relative;
+            }
+            .textbook-card-home:hover {
+                transform: translateY(-4px);
+                box-shadow: var(--shadow-lg);
+            }
+            .textbook-cover-home {
+                width: 100%;
+                aspect-ratio: 3/4;
+                background: var(--gradient-rainbow);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+            }
+            .textbook-cover-home img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            .textbook-cover-placeholder {
+                font-size: 48px;
+                color: white;
+            }
+            .textbook-info-home {
+                padding: var(--spacing-sm);
+                text-align: center;
+            }
+            .textbook-name-home {
+                font-size: var(--font-size-sm);
+                font-weight: var(--font-weight-bold);
+                color: var(--color-text);
+                margin-bottom: 2px;
+            }
+            .textbook-grade-home {
+                font-size: var(--font-size-xs);
+                color: var(--color-text-secondary);
+            }
+            .textbook-progress-badge {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: var(--color-success);
+                color: white;
+                padding: 2px 8px;
+                border-radius: var(--radius-full);
+                font-size: 10px;
+                font-weight: var(--font-weight-bold);
+            }
+            
+            @media (max-width: 768px) {
+                .textbook-grid-home {
+                    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+                    gap: var(--spacing-sm);
+                }
             }
         `;
         document.head.appendChild(style);
