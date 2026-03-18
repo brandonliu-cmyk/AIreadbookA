@@ -78,7 +78,7 @@ class AppController {
             [PageType.SUBJECT]: PageType.HOME,
             [PageType.TEXTBOOK]: PageType.HOME,
             [PageType.CHAPTER]: PageType.TEXTBOOK,
-            [PageType.READING]: PageType.TEXTBOOK,
+            [PageType.READING]: PageType.HOME,
             [PageType.SETTINGS]: PageType.HOME
         };
 
