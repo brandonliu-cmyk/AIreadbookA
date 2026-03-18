@@ -289,8 +289,8 @@ function initializeState() {
 let tutorialGuide = null;
 
 /**
- * 检查并显示首次使用引导
- * Requirements: 8.5 - 用户首次使用应用时显示简短有趣的引导教程
+ * 显示引导教程（每次进入都显示）
+ * Requirements: 8.5 - 用户每次进入应用时显示引导教程
  */
 function showTutorialIfFirstTime() {
     // 创建引导教程实例
@@ -337,13 +337,10 @@ function showTutorialIfFirstTime() {
     
     tutorialGuide.setDebug(APP_CONFIG.debug);
     
-    // 检查是否首次使用
-    if (tutorialGuide.isFirstTimeUser()) {
-        // 延迟显示引导，让页面先渲染完成
-        setTimeout(() => {
-            tutorialGuide.show();
-        }, 500);
-    }
+    // 每次进入都显示引导
+    setTimeout(() => {
+        tutorialGuide.show();
+    }, 500);
 }
 
 /**
