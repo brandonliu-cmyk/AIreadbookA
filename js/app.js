@@ -745,7 +745,7 @@ async function initTextbookSelection(subjects, allTextbooks) {
             `;
         }).join('');
         
-        // 绑定课本卡片点击事件
+        // 绑定课本卡片点击事件 - 直接跳转到点读界面
         textbookGrid.querySelectorAll('.textbook-card-home').forEach(card => {
             card.addEventListener('click', async () => {
                 const textbookId = card.dataset.textbookId;
@@ -754,9 +754,43 @@ async function initTextbookSelection(subjects, allTextbooks) {
                     appController.setLoading(true);
                     showToast(`正在加载${textbook.name}...`, 'info', 1500);
                     try {
-                        navigateTo(PageType.CHAPTER, {
+                        // 获取课本的章节和课程列表
+                        const chapters = await dataManager.getChapters(textbookId);
+                        
+                        if (!chapters || chapters.length === 0) {
+                            showToast('该课本暂无内容', 'warning');
+                            appController.setLoading(false);
+                            return;
+                        }
+                        
+                        // 尝试获取最后访问的课程
+                        let targetLesson = null;
+                        const learningRecord = storageManager.getLearningRecord(textbookId);
+                        
+                        if (learningRecord && learningRecord.lastAccessedLessonId) {
+                            // 查找最后访问的课程
+                            for (const chapter of chapters) {
+                                targetLesson = chapter.lessons.find(l => l.id === learningRecord.lastAccessedLessonId);
+                                if (targetLesson) break;
+                            }
+                        }
+                        
+                        // 如果没有学习记录，使用第一个课程
+                        if (!targetLesson) {
+                            targetLesson = chapters[0].lessons[0];
+                        }
+                        
+                        if (!targetLesson) {
+                            showToast('无法找到课程内容', 'error');
+                            appController.setLoading(false);
+                            return;
+                        }
+                        
+                        // 直接跳转到点读界面
+                        navigateTo(PageType.READING, {
                             subject: subject,
-                            textbook: textbook
+                            textbook: textbook,
+                            lesson: targetLesson
                         });
                     } catch (error) {
                         console.error('加载失败:', error);
