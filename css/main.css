@@ -4758,6 +4758,54 @@ body {
     padding: var(--spacing-lg);
 }
 
+/* 新手引导 - 年级选择样式 */
+.tutorial-grade-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-md);
+    margin: var(--spacing-lg) 0;
+    padding: 0 var(--spacing-md);
+}
+
+.tutorial-grade-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: var(--radius-xl);
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: all var(--duration-fast);
+    min-height: 100px;
+}
+
+.tutorial-grade-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.tutorial-grade-card.selected {
+    border-color: var(--color-primary);
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.tutorial-grade-number {
+    font-size: 2.5rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    line-height: 1;
+    margin-bottom: var(--spacing-xs);
+}
+
+.tutorial-grade-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+}
+
 /* 响应式调整 */
 @media (max-width: 480px) {
     .tutorial-container {

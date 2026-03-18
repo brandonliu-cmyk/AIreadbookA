@@ -28,6 +28,17 @@ class TutorialGuide {
             animation: 'bounce'
         },
         {
+            id: 'grade',
+            title: '选择你的年级',
+            description: '告诉我你现在读几年级，我会为你推荐合适的课本！',
+            icon: '🎓',
+            mascot: '🐨',
+            backgroundColor: 'var(--gradient-success)',
+            animation: 'bounce',
+            interactive: true,
+            type: 'grade-selection'
+        },
+        {
             id: 'subject',
             title: '选择你喜欢的学科',
             description: '点击学科卡片，选择你想学习的科目！',
@@ -50,18 +61,9 @@ class TutorialGuide {
             type: 'textbook-selection'
         },
         {
-            id: 'reading',
-            title: '点击就能听朗读',
-            description: '看到课本上的文字了吗？点一点就能听到标准的朗读声音，跟着一起读吧！',
-            icon: '🔊',
-            mascot: '🐼',
-            backgroundColor: 'var(--gradient-sunset)',
-            animation: 'pulse'
-        },
-        {
             id: 'complete',
             title: '准备好了吗？',
-            description: '太棒了！你已经学会使用AI点读啦！现在开始你的学习吧！',
+            description: '太棒了！你已经准备好开始学习啦！点击下方按钮开始吧！',
             icon: '🌟',
             mascot: '🦁',
             backgroundColor: 'var(--gradient-rainbow)',
@@ -92,10 +94,12 @@ class TutorialGuide {
         this._debug = false;
         
         // 用户选择的数据
+        this.selectedGrade = null;
         this.selectedSubject = null;
         this.selectedTextbook = null;
         this.subjects = [];
         this.textbooks = [];
+        this.grades = [1, 2, 3, 4, 5, 6]; // 小学1-6年级
         
         // 绑定方法
         this._handleKeyDown = this._handleKeyDown.bind(this);
@@ -306,6 +310,7 @@ class TutorialGuide {
             if (this.onCompleteCallback) {
                 // 传递用户选择的数据
                 this.onCompleteCallback({
+                    grade: this.selectedGrade,
                     subject: this.selectedSubject,
                     textbook: this.selectedTextbook
                 });
@@ -415,7 +420,9 @@ class TutorialGuide {
             let interactiveContent = '';
             
             // 根据步骤类型渲染交互式内容
-            if (step.interactive && step.type === 'subject-selection') {
+            if (step.interactive && step.type === 'grade-selection') {
+                interactiveContent = this._renderGradeSelection();
+            } else if (step.interactive && step.type === 'subject-selection') {
                 interactiveContent = this._renderSubjectSelection();
             } else if (step.interactive && step.type === 'textbook-selection') {
                 interactiveContent = this._renderTextbookSelection();
@@ -486,6 +493,25 @@ class TutorialGuide {
             
             return `<span class="${className}" data-step="${index}"></span>`;
         }).join('');
+    }
+
+    /**
+     * 渲染年级选择
+     * @returns {string} HTML字符串
+     * @private
+     */
+    _renderGradeSelection() {
+        return `
+            <div class="tutorial-grade-grid">
+                ${this.grades.map(grade => `
+                    <div class="tutorial-grade-card ${this.selectedGrade === grade ? 'selected' : ''}" 
+                         data-grade="${grade}">
+                        <div class="tutorial-grade-number">${grade}</div>
+                        <div class="tutorial-grade-label">年级</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
     }
 
     /**
@@ -597,6 +623,19 @@ class TutorialGuide {
             });
         });
         
+        // 年级卡片点击
+        const gradeCards = this.contentElement.querySelectorAll('.tutorial-grade-card');
+        gradeCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const grade = parseInt(card.dataset.grade, 10);
+                this.selectedGrade = grade;
+                
+                // 更新选中状态
+                gradeCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            });
+        });
+        
         // 学科卡片点击
         const subjectCards = this.contentElement.querySelectorAll('.tutorial-subject-card');
         subjectCards.forEach(card => {
@@ -612,6 +651,10 @@ class TutorialGuide {
                 if (this.dataManager && this.selectedSubject) {
                     try {
                         this.textbooks = await this.dataManager.getTextbooks(this.selectedSubject.id);
+                        // 根据选择的年级过滤课本
+                        if (this.selectedGrade) {
+                            this.textbooks = this.textbooks.filter(t => t.grade === this.selectedGrade);
+                        }
                         this.selectedTextbook = null; // 重置课本选择
                     } catch (error) {
                         console.error('加载课本失败:', error);
