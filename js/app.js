@@ -328,9 +328,31 @@ function showTutorialIfFirstTime() {
                 showToast('欢迎开始学习！', 'success');
             }
         },
-        onSkip: () => {
+        onSkip: async (selections) => {
             if (APP_CONFIG.debug) {
-                console.log('🎓 用户跳过了引导教程');
+                console.log('🎓 用户跳过了引导教程', selections);
+            }
+            
+            // 如果用户选择了学科和课本，也跳转到点读界面
+            if (selections && selections.subject && selections.textbook) {
+                try {
+                    appController.setLoading(true);
+                    const chapters = await dataManager.getChapters(selections.textbook.id);
+                    
+                    if (chapters && chapters.length > 0 && chapters[0].lessons && chapters[0].lessons.length > 0) {
+                        const firstLesson = chapters[0].lessons[0];
+                        navigateTo(PageType.READING, {
+                            subject: selections.subject,
+                            textbook: selections.textbook,
+                            lesson: firstLesson
+                        });
+                        showToast('开始学习！', 'success');
+                    }
+                } catch (error) {
+                    console.error('加载课程失败:', error);
+                } finally {
+                    appController.setLoading(false);
+                }
             }
         }
     });

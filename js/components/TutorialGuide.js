@@ -287,8 +287,13 @@ class TutorialGuide {
         this.markAsCompleted();
         this.hide();
 
+        // 如果用户已经选择了学科和课本，也传递给回调
         if (this.onSkipCallback) {
-            this.onSkipCallback();
+            this.onSkipCallback({
+                grade: this.selectedGrade,
+                subject: this.selectedSubject,
+                textbook: this.selectedTextbook
+            });
         }
     }
 
