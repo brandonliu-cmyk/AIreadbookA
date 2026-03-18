@@ -295,11 +295,38 @@ let tutorialGuide = null;
 function showTutorialIfFirstTime() {
     // 创建引导教程实例
     tutorialGuide = new TutorialGuide({
-        onComplete: () => {
+        dataManager: dataManager,
+        onComplete: async (selections) => {
             if (APP_CONFIG.debug) {
-                console.log('🎓 用户完成了引导教程');
+                console.log('🎓 用户完成了引导教程', selections);
             }
-            showToast('欢迎开始学习！', 'success');
+            
+            // 如果用户选择了学科和课本，直接跳转到点读界面
+            if (selections && selections.subject && selections.textbook) {
+                try {
+                    appController.setLoading(true);
+                    const chapters = await dataManager.getChapters(selections.textbook.id);
+                    
+                    if (chapters && chapters.length > 0 && chapters[0].lessons && chapters[0].lessons.length > 0) {
+                        const firstLesson = chapters[0].lessons[0];
+                        navigateTo(PageType.READING, {
+                            subject: selections.subject,
+                            textbook: selections.textbook,
+                            lesson: firstLesson
+                        });
+                        showToast('欢迎开始学习！', 'success');
+                    } else {
+                        showToast('欢迎开始学习！', 'success');
+                    }
+                } catch (error) {
+                    console.error('加载课程失败:', error);
+                    showToast('欢迎开始学习！', 'success');
+                } finally {
+                    appController.setLoading(false);
+                }
+            } else {
+                showToast('欢迎开始学习！', 'success');
+            }
         },
         onSkip: () => {
             if (APP_CONFIG.debug) {
@@ -325,6 +352,7 @@ function showTutorialIfFirstTime() {
 function showTutorial() {
     if (!tutorialGuide) {
         tutorialGuide = new TutorialGuide({
+            dataManager: dataManager,
             onComplete: () => {
                 showToast('引导完成！', 'success');
             }

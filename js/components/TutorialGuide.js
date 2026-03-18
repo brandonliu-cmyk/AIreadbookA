@@ -35,7 +35,8 @@ class TutorialGuide {
             mascot: '🦊',
             backgroundColor: 'var(--gradient-secondary)',
             animation: 'wiggle',
-            highlightSelector: '.card-subject'
+            interactive: true,
+            type: 'subject-selection'
         },
         {
             id: 'textbook',
@@ -44,12 +45,14 @@ class TutorialGuide {
             icon: '📖',
             mascot: '🐻',
             backgroundColor: 'var(--gradient-accent)',
-            animation: 'float'
+            animation: 'float',
+            interactive: true,
+            type: 'textbook-selection'
         },
         {
             id: 'reading',
             title: '点击就能听朗读',
-            description: '看到课本上的文字了吗？点一点就能听到标准佳的朗读声音，跟着一起读吧！',
+            description: '看到课本上的文字了吗？点一点就能听到标准的朗读声音，跟着一起读吧！',
             icon: '🔊',
             mascot: '🐼',
             backgroundColor: 'var(--gradient-sunset)',
@@ -73,18 +76,26 @@ class TutorialGuide {
      * @param {Array} options.steps - 自定义步骤（可选）
      * @param {Function} options.onComplete - 完成回调
      * @param {Function} options.onSkip - 跳过回调
+     * @param {Object} options.dataManager - 数据管理器实例
      */
     constructor(options = {}) {
         this.container = options.container || document.body;
         this.steps = options.steps || TutorialGuide.DEFAULT_STEPS;
         this.onCompleteCallback = options.onComplete || null;
         this.onSkipCallback = options.onSkip || null;
+        this.dataManager = options.dataManager || null;
         
         this.currentStep = 0;
         this.isVisible = false;
         this.overlayElement = null;
         this.contentElement = null;
         this._debug = false;
+        
+        // 用户选择的数据
+        this.selectedSubject = null;
+        this.selectedTextbook = null;
+        this.subjects = [];
+        this.textbooks = [];
         
         // 绑定方法
         this._handleKeyDown = this._handleKeyDown.bind(this);
@@ -142,11 +153,25 @@ class TutorialGuide {
 
     /**
      * 显示引导教程
-     * @returns {boolean} 是否成功显示
+     * @returns {Promise<boolean>} 是否成功显示
      */
-    show() {
+    async show() {
         if (this.isVisible) {
             return false;
+        }
+
+        // 加载学科和课本数据
+        if (this.dataManager) {
+            try {
+                this.subjects = await this.dataManager.getSubjects();
+                // 默认选择英语
+                this.selectedSubject = this.subjects.find(s => s.id === 'english') || this.subjects[0];
+                if (this.selectedSubject) {
+                    this.textbooks = await this.dataManager.getTextbooks(this.selectedSubject.id);
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
         }
 
         this.currentStep = 0;
@@ -279,7 +304,11 @@ class TutorialGuide {
             this.hide();
             
             if (this.onCompleteCallback) {
-                this.onCompleteCallback();
+                // 传递用户选择的数据
+                this.onCompleteCallback({
+                    subject: this.selectedSubject,
+                    textbook: this.selectedTextbook
+                });
             }
         }, 1500);
     }
@@ -383,11 +412,20 @@ class TutorialGuide {
         this.contentElement.classList.add('tutorial-step-changing');
 
         setTimeout(() => {
+            let interactiveContent = '';
+            
+            // 根据步骤类型渲染交互式内容
+            if (step.interactive && step.type === 'subject-selection') {
+                interactiveContent = this._renderSubjectSelection();
+            } else if (step.interactive && step.type === 'textbook-selection') {
+                interactiveContent = this._renderTextbookSelection();
+            }
+            
             this.contentElement.innerHTML = `
                 <div class="tutorial-step animate-bounce-in" style="background: ${step.backgroundColor};">
                     <!-- 跳过按钮 -->
                     <button class="tutorial-skip-btn" id="tutorialSkipBtn" aria-label="跳过引导">
-                        跳过 ✕
+                        ✕
                     </button>
                     
                     <!-- 吉祥物 -->
@@ -395,16 +433,14 @@ class TutorialGuide {
                         ${step.mascot}
                     </div>
                     
-                    <!-- 主图标 -->
-                    <div class="tutorial-icon animate-float">
-                        ${step.icon}
-                    </div>
-                    
                     <!-- 标题 -->
                     <h2 class="tutorial-title">${step.title}</h2>
                     
                     <!-- 描述 -->
                     <p class="tutorial-description">${step.description}</p>
+                    
+                    <!-- 交互式内容 -->
+                    ${interactiveContent}
                     
                     <!-- 进度指示器 -->
                     <div class="tutorial-progress">
@@ -415,21 +451,13 @@ class TutorialGuide {
                     <div class="tutorial-nav">
                         ${!isFirst ? `
                             <button class="tutorial-btn tutorial-btn-prev" id="tutorialPrevBtn">
-                                <span>👈</span> 上一步
+                                上一步
                             </button>
                         ` : '<div class="tutorial-btn-placeholder"></div>'}
                         
                         <button class="tutorial-btn tutorial-btn-next ${isLast ? 'tutorial-btn-complete' : ''}" id="tutorialNextBtn">
-                            ${isLast ? '开始学习 🚀' : '下一步 👉'}
+                            ${isLast ? '开始学习 🚀' : '下一步'}
                         </button>
-                    </div>
-                    
-                    <!-- 装饰元素 -->
-                    <div class="tutorial-decorations">
-                        <span class="tutorial-star tutorial-star-1">⭐</span>
-                        <span class="tutorial-star tutorial-star-2">✨</span>
-                        <span class="tutorial-star tutorial-star-3">🌟</span>
-                        <span class="tutorial-star tutorial-star-4">💫</span>
                     </div>
                 </div>
             `;
@@ -458,6 +486,77 @@ class TutorialGuide {
             
             return `<span class="${className}" data-step="${index}"></span>`;
         }).join('');
+    }
+
+    /**
+     * 渲染学科选择
+     * @returns {string} HTML字符串
+     * @private
+     */
+    _renderSubjectSelection() {
+        if (!this.subjects || this.subjects.length === 0) {
+            return '<p class="tutorial-loading">加载中...</p>';
+        }
+        
+        // 只显示语文和英语
+        const displaySubjects = this.subjects.filter(s => s.id === 'chinese' || s.id === 'english');
+        
+        return `
+            <div class="tutorial-subject-grid">
+                ${displaySubjects.map(subject => `
+                    <div class="tutorial-subject-card ${this.selectedSubject && this.selectedSubject.id === subject.id ? 'selected' : ''}" 
+                         data-subject-id="${subject.id}">
+                        <div class="tutorial-subject-icon" style="background: ${subject.color};">
+                            ${subject.icon}
+                        </div>
+                        <div class="tutorial-subject-name">${subject.name}</div>
+                        <div class="tutorial-subject-name-en">${subject.nameEn}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    /**
+     * 渲染课本选择
+     * @returns {string} HTML字符串
+     * @private
+     */
+    _renderTextbookSelection() {
+        if (!this.textbooks || this.textbooks.length === 0) {
+            return '<p class="tutorial-loading">请先选择学科</p>';
+        }
+        
+        // 按出版社分组
+        const publishers = [...new Set(this.textbooks.map(t => t.publisher))];
+        const currentPublisher = publishers[0];
+        const filteredTextbooks = this.textbooks.filter(t => t.publisher === currentPublisher).slice(0, 2);
+        
+        return `
+            <div class="tutorial-textbook-section">
+                <div class="tutorial-publisher-tabs">
+                    ${publishers.map((pub, idx) => `
+                        <button class="tutorial-publisher-tab ${idx === 0 ? 'active' : ''}" data-publisher="${pub}">
+                            ${pub}
+                        </button>
+                    `).join('')}
+                </div>
+                <div class="tutorial-textbook-grid">
+                    ${filteredTextbooks.map(textbook => `
+                        <div class="tutorial-textbook-card ${this.selectedTextbook && this.selectedTextbook.id === textbook.id ? 'selected' : ''}" 
+                             data-textbook-id="${textbook.id}">
+                            <div class="tutorial-textbook-cover">
+                                ${textbook.coverImage ? `
+                                    <img src="${encodeURI(textbook.coverImage)}" alt="${textbook.name}">
+                                ` : '<div class="tutorial-textbook-placeholder">📖</div>'}
+                            </div>
+                            <div class="tutorial-textbook-name">${textbook.name}</div>
+                            <div class="tutorial-textbook-grade">${textbook.grade}年级${textbook.semester}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
     }
 
     /**
@@ -495,6 +594,81 @@ class TutorialGuide {
             dot.addEventListener('click', () => {
                 const stepIndex = parseInt(dot.dataset.step, 10);
                 this.goToStep(stepIndex);
+            });
+        });
+        
+        // 学科卡片点击
+        const subjectCards = this.contentElement.querySelectorAll('.tutorial-subject-card');
+        subjectCards.forEach(card => {
+            card.addEventListener('click', async () => {
+                const subjectId = card.dataset.subjectId;
+                this.selectedSubject = this.subjects.find(s => s.id === subjectId);
+                
+                // 更新选中状态
+                subjectCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                
+                // 加载该学科的课本
+                if (this.dataManager && this.selectedSubject) {
+                    try {
+                        this.textbooks = await this.dataManager.getTextbooks(this.selectedSubject.id);
+                        this.selectedTextbook = null; // 重置课本选择
+                    } catch (error) {
+                        console.error('加载课本失败:', error);
+                    }
+                }
+            });
+        });
+        
+        // 出版社标签点击
+        const publisherTabs = this.contentElement.querySelectorAll('.tutorial-publisher-tab');
+        publisherTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const publisher = tab.dataset.publisher;
+                publisherTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // 重新渲染课本列表
+                const filteredTextbooks = this.textbooks.filter(t => t.publisher === publisher).slice(0, 2);
+                const textbookGrid = this.contentElement.querySelector('.tutorial-textbook-grid');
+                if (textbookGrid) {
+                    textbookGrid.innerHTML = filteredTextbooks.map(textbook => `
+                        <div class="tutorial-textbook-card ${this.selectedTextbook && this.selectedTextbook.id === textbook.id ? 'selected' : ''}" 
+                             data-textbook-id="${textbook.id}">
+                            <div class="tutorial-textbook-cover">
+                                ${textbook.coverImage ? `
+                                    <img src="${encodeURI(textbook.coverImage)}" alt="${textbook.name}">
+                                ` : '<div class="tutorial-textbook-placeholder">📖</div>'}
+                            </div>
+                            <div class="tutorial-textbook-name">${textbook.name}</div>
+                            <div class="tutorial-textbook-grade">${textbook.grade}年级${textbook.semester}</div>
+                        </div>
+                    `).join('');
+                    
+                    // 重新绑定课本卡片事件
+                    this._bindTextbookCardEvents();
+                }
+            });
+        });
+        
+        // 课本卡片点击
+        this._bindTextbookCardEvents();
+    }
+    
+    /**
+     * 绑定课本卡片事件
+     * @private
+     */
+    _bindTextbookCardEvents() {
+        const textbookCards = this.contentElement.querySelectorAll('.tutorial-textbook-card');
+        textbookCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const textbookId = card.dataset.textbookId;
+                this.selectedTextbook = this.textbooks.find(t => t.id === textbookId);
+                
+                // 更新选中状态
+                textbookCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
             });
         });
     }
